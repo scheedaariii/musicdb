@@ -14,9 +14,8 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // Globales Theme mit der definierten Farbpalette:
-      // #242F40 (Dunkelblau) als Primärfarbe
-      // #CCA43B (Gold) als Akzentfarbe
-      // #E5E5E5 (Hellgrau) als Hintergrund
+      // Mit coolors.co erstelltes Farbschema: https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
+     
       theme: ThemeData(
         // Primärfarbe: Dunkelblau #242F40
         primaryColor: const Color(0xFF242F40),
