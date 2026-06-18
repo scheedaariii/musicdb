@@ -1,12 +1,11 @@
-// band.dart
-// Das Datenmodell für eine Band.
-// Enthält alle relevanten Felder, die eine Band beschreiben.
+// Das Datenmodell für die Darstellung einer Band.
+// Enthält alle relevanten Felder, die eine Band beschreiben. Diese werden in Zukunft über verschieden Kategorien verteilt sein und hier zusammengefügt
 
 class Band {
   final String title;        // Name der Band (Pflichtfeld)
-  final String description;  // Beschreibung / Geschichte der Band (Pflichtfeld)
+  final String description;  // Beschreibung 
   final String genre;        // Musikgenre der Band
-  final String origin;       // Herkunftsland oder -stadt
+  final String origin;       // Herkunft
   final String founded;      // Gründungsjahr
 
   const Band({

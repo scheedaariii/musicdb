@@ -1,6 +1,5 @@
-// band_mock_data.dart
-// Enthält hardcodierte Beispieldaten (Mockup-Daten) für Bands.
-// Keine Datenbank oder API notwendig – die Daten sind direkt im Code.
+// Enthält hardcodierte Beispieldaten für Bands. Nach der definition des Datenschemas wurden die Daten selbst via AI generiert
+// Auf dieser Stufe des Projekts werden die Daten direkt im Band Sektor angezeigt/gespeichert. Im Verlaufe des Projekts werden die Daten in eigene Kategorien aufgeteilt.
 
 import '../domain/band.dart';
 

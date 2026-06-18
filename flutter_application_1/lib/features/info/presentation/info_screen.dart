@@ -1,8 +1,11 @@
 // info_screen.dart
 // Der Info-Bereich der App.
-// Zeigt allgemeine Informationen über die MusicDB App an.
+// Enthält einen Drawer mit Links zu Impressum, Datenschutz und Nutzungsbedingungen.
 
 import 'package:flutter/material.dart';
+import 'impressum_screen.dart';
+import 'datenschutz_screen.dart';
+import 'nutzungsbedingungen_screen.dart';
 
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
@@ -10,11 +13,148 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBar mit Titel
       appBar: AppBar(
         title: const Text('Info'),
+        // Das Hamburger-Icon (☰) erscheint automatisch wenn ein Drawer vorhanden ist
       ),
 
+      // Drawer mit drei Menüeinträgen
+      drawer: Drawer(
+        backgroundColor: const Color(0xFFFFFFFF),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            // Drawer-Header im App-Design
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xFF242F40),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Icon(
+                    Icons.library_music,
+                    color: Color(0xFFCCA43B),
+                    size: 36,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'MusicDB',
+                    style: TextStyle(
+                      color: Color(0xFFFFFFFF),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Rechtliche Informationen',
+                    style: TextStyle(
+                      color: const Color(0xFFFFFFFF).withValues(alpha: 0.7),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Menüeintrag: Impressum
+            ListTile(
+              leading: const Icon(
+                Icons.business,
+                color: Color(0xFF242F40),
+              ),
+              title: const Text(
+                'Impressum',
+                style: TextStyle(
+                  color: Color(0xFF363636),
+                  fontSize: 15,
+                ),
+              ),
+              onTap: () {
+                // Drawer schliessen bevor neue Seite geöffnet wird
+                Navigator.pop(context);
+                // Impressum-Screen öffnen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ImpressumScreen(),
+                  ),
+                );
+              },
+            ),
+
+            // Trennlinie
+            const Divider(
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5E5),
+            ),
+
+            // Menüeintrag: Datenschutz
+            ListTile(
+              leading: const Icon(
+                Icons.lock_outline,
+                color: Color(0xFF242F40),
+              ),
+              title: const Text(
+                'Datenschutz',
+                style: TextStyle(
+                  color: Color(0xFF363636),
+                  fontSize: 15,
+                ),
+              ),
+              onTap: () {
+                // Drawer schliessen bevor neue Seite geöffnet wird
+                Navigator.pop(context);
+                // Datenschutz-Screen öffnen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DatenschutzScreen(),
+                  ),
+                );
+              },
+            ),
+
+            // Trennlinie
+            const Divider(
+              indent: 16,
+              endIndent: 16,
+              color: Color(0xFFE5E5E5),
+            ),
+
+            // Menüeintrag: Nutzungsbedingungen
+            ListTile(
+              leading: const Icon(
+                Icons.description_outlined,
+                color: Color(0xFF242F40),
+              ),
+              title: const Text(
+                'Nutzungsbedingungen',
+                style: TextStyle(
+                  color: Color(0xFF363636),
+                  fontSize: 15,
+                ),
+              ),
+              onTap: () {
+                // Drawer schliessen bevor neue Seite geöffnet wird
+                Navigator.pop(context);
+                // Nutzungsbedingungen-Screen öffnen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NutzungsbedingungenScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+
+      // Body: Inhalt des Info-Screens
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -35,7 +175,7 @@ class InfoScreen extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFCCA43B).withOpacity(0.2),
+                      color: const Color(0xFFCCA43B).withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -95,12 +235,46 @@ class InfoScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Kontakt
+            // Entwickelt für
             _buildSection(
               title: 'Entwickelt für',
               content:
                   'Diese App wurde im Rahmen des Moduls Mobile Apps '
                   'an der TEKO Schweizerische Fachschule AG entwickelt.',
+            ),
+
+            const SizedBox(height: 12),
+
+            // Hinweis auf Drawer
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCCA43B).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFCCA43B).withValues(alpha: 0.4),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.menu,
+                    color: Color(0xFFCCA43B),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Impressum, Datenschutz und Nutzungsbedingungen findest du im Menü (☰) oben links.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF363636),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -120,7 +294,7 @@ class InfoScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),

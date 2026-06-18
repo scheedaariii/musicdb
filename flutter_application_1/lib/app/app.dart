@@ -1,4 +1,3 @@
-// app.dart
 // Hier liegt die MaterialApp mit dem globalen Theme und der Startseite.
 
 import 'package:flutter/material.dart';
@@ -17,13 +16,13 @@ class App extends StatelessWidget {
       // Mit coolors.co erstelltes Farbschema: https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
      
       theme: ThemeData(
-        // Primärfarbe: Dunkelblau #242F40
+        // Hauptfarbe
         primaryColor: const Color(0xFF242F40),
 
-        // App-Hintergrund: Hellgrau #E5E5E5
+        // App Hintergrund
         scaffoldBackgroundColor: const Color(0xFFE5E5E5),
 
-        // AppBar-Design
+        // AppBar Design
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF242F40),
           foregroundColor: Color(0xFFFFFFFF),
@@ -34,18 +33,17 @@ class App extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-
-        // BottomNavigationBar-Design
+        // BottomNavigationBar Design
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Color(0xFF242F40),
           selectedItemColor: Color(0xFFCCA43B),
           unselectedItemColor: Color(0xFFE5E5E5),
         ),
 
-        // Farbe für Karten
+        // Farbe für Datenkarten (weisse boxen)
         cardColor: const Color(0xFFFFFFFF),
 
-        // Farbschema
+        // Farbschema Allg.
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: const Color(0xFF242F40),
           secondary: const Color(0xFFCCA43B),

@@ -1,5 +1,4 @@
-// navigation_screen.dart
-// Enthält die globale Bottom Navigation der App.
+// Die globale Bottom Navigation der App.
 // Wechselt zwischen den drei Hauptbereichen: Bands, Info, Profil.
 
 import 'package:flutter/material.dart';
@@ -18,7 +17,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   // Speichert den aktuell angezeigten Tab-Index (0 = Bands, 1 = Info, 2 = Profil)
   int _currentIndex = 1;
 
-  // Die drei Hauptbereiche der App
+  // Die akutellen Hauptbereiche der App
   final List<Widget> _screens = const [
     BandListScreen(),
     InfoScreen(),
@@ -28,7 +27,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Zeigt den jeweils ausgewählten Screen an
+      // Aufrufen des aktuell ausgewählten Screens (_currentIndex)
       body: _screens[_currentIndex],
 
       // Bottom Navigation mit drei Tabs
