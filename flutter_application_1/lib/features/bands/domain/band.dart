@@ -1,8 +1,8 @@
 // Das Datenmodell für die Darstellung einer Band.
-// Enthält alle relevanten Felder, die eine Band beschreiben. Diese werden in Zukunft über verschieden Kategorien verteilt sein und hier zusammengefügt
+// Ein Beispielkonstrukt welches weiter verfeiner wird
 
 class Band {
-  final String title;        // Name der Band (Pflichtfeld)
+  final String title;        // Name der Band (
   final String description;  // Beschreibung 
   final String genre;        // Musikgenre der Band
   final String origin;       // Herkunft

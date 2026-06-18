@@ -1,9 +1,8 @@
-// Enthält hardcodierte Beispieldaten für Bands. Nach der definition des Datenschemas wurden die Daten selbst via AI generiert
-// Auf dieser Stufe des Projekts werden die Daten direkt im Band Sektor angezeigt/gespeichert. Im Verlaufe des Projekts werden die Daten in eigene Kategorien aufgeteilt.
+// Enthält hardcodierte Beispieldaten 
+// Die Daten wurden per AI in die Struktur abgefüllt
 
 import '../domain/band.dart';
 
-// Liste mit Beispiel-Bands für verschiedene Genres
 final List<Band> mockBands = const [
   Band(
     title: 'Metallica',
@@ -48,17 +47,7 @@ final List<Band> mockBands = const [
     origin: 'Aberdeen, USA',
     founded: '1987',
   ),
-  Band(
-    title: 'The Beatles',
-    description:
-        'The Beatles sind eine britische Rockband aus Liverpool, die 1960 gegründet wurde. '
-        'Bestehend aus John Lennon, Paul McCartney, George Harrison und Ringo Starr, '
-        'gelten sie als die einflussreichste Band der Popgeschichte. Ihre Musik prägte '
-        'die 1960er Jahre und hat bis heute eine weltweite Wirkung.',
-    genre: 'Rock / Pop',
-    origin: 'Liverpool, UK',
-    founded: '1960',
-  ),
+
   Band(
     title: 'Rammstein',
     description:
@@ -69,5 +58,17 @@ final List<Band> mockBands = const [
     genre: 'Neue Deutsche Härte / Industrial Metal',
     origin: 'Berlin, Deutschland',
     founded: '1994',
+  ),
+
+  Band(
+    title: 'Cannibal Corpse',
+    description:
+        'Cannibal Corpse ist eine US-amerikanische Death-Metal-Band, die 1988 in Buffalo, New York gegründet wurde. '
+        'Sie gelten als eine der einflussreichsten und meistverkauften Death-Metal-Bands aller Zeiten. '
+        'Mit über 2 Millionen verkauften Alben haben sie das Genre massgeblich geprägt. '
+        'Bekannte Alben sind "Tomb of the Mutilated" und "Bloodthirst".',
+    genre: 'Death Metal / Brutal Death Metal',
+    origin: 'Buffalo, USA',
+    founded: '1988',
   ),
 ];

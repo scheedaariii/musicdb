@@ -1,4 +1,4 @@
-// Hier liegt die MaterialApp mit dem globalen Theme und der Startseite.
+// MaterialApp mit den Designgrundlagen und der Startseite.
 
 import 'package:flutter/material.dart';
 import 'navigation_screen.dart';

@@ -1,7 +1,6 @@
 // Zeigt das Impressum der App an.
 // Textliche Inhalte wurden per AI generiert
-// Titel mit goldenem Akzent -> Dieser Teil wurde ebenfalls mit AI erstellt da ich es selbst nicht hingekriegt habe die Goldakazente einzufügen.
-
+// Titel mit goldenem Akzent per AI generiert
 import 'package:flutter/material.dart';
 
 class ImpressumScreen extends StatelessWidget {
@@ -66,7 +65,7 @@ class ImpressumScreen extends StatelessWidget {
     );
   }
 
-  // Wiederverwendbares Abschnitts-Widget
+  // Abschnitts-Widget
   Widget _buildSection({required String title, required String content}) {
     return Container(
       width: double.infinity,

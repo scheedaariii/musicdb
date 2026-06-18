@@ -1,6 +1,8 @@
 // info_screen.dart
 // Der Info-Bereich der App.
 // Enthält einen Drawer mit Links zu Impressum, Datenschutz und Nutzungsbedingungen.
+// Beispiel Texte per ai Generiert
+// Goldene Akzente in den Titeln AI generiert
 
 import 'package:flutter/material.dart';
 import 'impressum_screen.dart';
@@ -15,7 +17,7 @@ class InfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Info'),
-        // Das Hamburger-Icon (☰) erscheint automatisch wenn ein Drawer vorhanden ist
+        // Einblendendes des Hamburger Menüs
       ),
 
       // Drawer mit drei Menüeinträgen
@@ -24,7 +26,7 @@ class InfoScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            // Drawer-Header im App-Design
+            // Drawer-Header 
             DrawerHeader(
               decoration: const BoxDecoration(
                 color: Color(0xFF242F40),
@@ -73,7 +75,6 @@ class InfoScreen extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                // Drawer schliessen bevor neue Seite geöffnet wird
                 Navigator.pop(context);
                 // Impressum-Screen öffnen
                 Navigator.push(
@@ -85,7 +86,6 @@ class InfoScreen extends StatelessWidget {
               },
             ),
 
-            // Trennlinie
             const Divider(
               indent: 16,
               endIndent: 16,
@@ -106,7 +106,6 @@ class InfoScreen extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                // Drawer schliessen bevor neue Seite geöffnet wird
                 Navigator.pop(context);
                 // Datenschutz-Screen öffnen
                 Navigator.push(
@@ -118,7 +117,6 @@ class InfoScreen extends StatelessWidget {
               },
             ),
 
-            // Trennlinie
             const Divider(
               indent: 16,
               endIndent: 16,
@@ -139,7 +137,6 @@ class InfoScreen extends StatelessWidget {
                 ),
               ),
               onTap: () {
-                // Drawer schliessen bevor neue Seite geöffnet wird
                 Navigator.pop(context);
                 // Nutzungsbedingungen-Screen öffnen
                 Navigator.push(
@@ -245,46 +242,14 @@ class InfoScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            // Hinweis auf Drawer
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFCCA43B).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFCCA43B).withValues(alpha: 0.4),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.menu,
-                    color: Color(0xFFCCA43B),
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Impressum, Datenschutz und Nutzungsbedingungen findest du im Menü (☰) oben links.',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF363636),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
+            
           ],
         ),
       ),
     );
   }
 
-  // Wiederverwendbares Abschnitts-Widget
+  // Textbox-Widget
   Widget _buildSection({required String title, required String content}) {
     return Container(
       width: double.infinity,

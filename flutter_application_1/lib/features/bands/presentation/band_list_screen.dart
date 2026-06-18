@@ -18,15 +18,14 @@ class BandListScreen extends StatelessWidget {
         title: const Text('MusicDB – Bands'),
       ),
 
-      // Body: scrollbare Liste aller Bands
+      // Body: Liste aller Bands
       body: ListView.builder(
-        // Etwas Abstand oben und unten in der Liste
         padding: const EdgeInsets.symmetric(vertical: 8),
 
-        // Anzahl der Einträge aus den Mockup-Daten
+        // Bands in Mockupdaten zählen
         itemCount: mockBands.length,
 
-        // Für jeden Eintrag wird eine Karte erstellt
+        // Eine Anzeigebox pro Eintrag
         itemBuilder: (context, index) {
           final Band band = mockBands[index];
 
@@ -38,7 +37,6 @@ class BandListScreen extends StatelessWidget {
 }
 
 // Eigenes Widget für eine Band-Karte in der Liste
-// Ausgelagert für bessere Lesbarkeit
 class _BandCard extends StatelessWidget {
   final Band band;
 
@@ -54,7 +52,6 @@ class _BandCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        // Leichter Schatten für Tiefenwirkung
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -64,11 +61,10 @@ class _BandCard extends StatelessWidget {
         ],
       ),
 
-      // Tippen auf die Karte öffnet den Detailscreen
+      // Tippen auf die Box öffnet den Detailscreen
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          // Mit Navigator.push wird der Detailscreen auf den Stapel gelegt
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -139,7 +135,7 @@ class _BandCard extends StatelessWidget {
                 ),
               ),
 
-              // Pfeil-Icon rechts als Hinweis auf Detailseite
+              // Pfeil-Icon rechts
               const Icon(
                 Icons.chevron_right,
                 color: Color(0xFFCCA43B),

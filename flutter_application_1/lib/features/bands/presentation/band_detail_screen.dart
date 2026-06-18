@@ -20,21 +20,21 @@ class BandDetailScreen extends StatelessWidget {
       // AppBar zeigt den Bandnamen als Titel
       appBar: AppBar(
         title: Text(band.title),
-        // Der Zurück-Pfeil erscheint automatisch dank AppBar + Navigator.push
+        // Inkl. Zurückpfeil
       ),
 
-      // Scrollbarer Body für längere Inhalte
+      // Scrollbarer Body um längere  Listen azuzeigen. Aktuel sind zuwenig Inhalte verfügbar für  scrolling
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header-Bereich mit Icon und Bandname
+            // Header mit Icon und Bandname
             _buildHeader(band),
 
             const SizedBox(height: 20),
 
-            // Info-Karten für Metadaten
+            // Info-Feld 
             _buildInfoRow(
               icon: Icons.album,
               label: 'Genre',
@@ -59,7 +59,7 @@ class BandDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Beschreibungsbereich
+          
             const Text(
               'Über die Band',
               style: TextStyle(
@@ -71,7 +71,7 @@ class BandDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            // Trennlinie in Goldfarbe
+            // Trennlinie 
             Container(
               height: 2,
               width: 40,
@@ -86,7 +86,7 @@ class BandDetailScreen extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 15,
                 color: Color(0xFF363636),
-                height: 1.6, // Zeilenabstand für bessere Lesbarkeit
+                height: 1.6, 
               ),
             ),
 
@@ -108,7 +108,6 @@ class BandDetailScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Grosses Musik-Icon
           Container(
             width: 72,
             height: 72,
@@ -152,7 +151,7 @@ class BandDetailScreen extends StatelessWidget {
     );
   }
 
-  // Wiederverwendbares Info-Zeilen-Widget
+  // Info-Zeilen-Widget 
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
@@ -182,7 +181,7 @@ class BandDetailScreen extends StatelessWidget {
 
           const SizedBox(width: 12),
 
-          // Label (Bezeichnung)
+          // Bezeichnung
           Text(
             '$label: ',
             style: const TextStyle(
