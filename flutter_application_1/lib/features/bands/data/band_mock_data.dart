@@ -1,4 +1,4 @@
-// Enthält hardcodierte Beispieldaten 
+// Enthält hardcodierte Beispieldaten für Bands
 // Die Daten wurden per AI in die Struktur abgefüllt
 
 import '../domain/band.dart';

@@ -39,6 +39,12 @@ class InfoScreen extends StatelessWidget {
                     Icons.library_music,
                     color: Color(0xFFCCA43B),
                     size: 36,
+             // Bisher fehlgeschlagener Versuch ein eigenen Logo zu verwenden
+             //child: Image.asset(
+                //'assets/images/mein_logo.png',
+                // width: 44,
+                // height: 44,
+                //),
                   ),
                   const SizedBox(height: 8),
                   const Text(
@@ -268,7 +274,7 @@ class InfoScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Abschnittstitel mit goldenem Akzent
+          // Abschnittstitel mit goldenem Akzent - Akzent wurde per AI generiert
           Row(
             children: [
               Container(
