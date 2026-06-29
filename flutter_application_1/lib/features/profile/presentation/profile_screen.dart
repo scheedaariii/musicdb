@@ -3,6 +3,7 @@
 // Zeigt ein einfaches Benutzerprofil als Platzhalter an.
 
 import 'package:flutter/material.dart';
+import '../../../app/app_drawer.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -14,7 +15,8 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Profil'),
       ),
-
+       //nav drawer laden
+      drawer: const AppDrawer(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

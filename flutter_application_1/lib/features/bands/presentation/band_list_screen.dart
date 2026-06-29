@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../data/band_mock_data.dart';
 import '../domain/band.dart';
 import 'band_detail_screen.dart';
+import '../../../app/app_drawer.dart';
 
 class BandListScreen extends StatelessWidget {
   const BandListScreen({super.key});
@@ -17,7 +18,8 @@ class BandListScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('MusicDB – Bands'),
       ),
-
+      //nav drawer laden
+      drawer: const AppDrawer(),
       // Body: Liste aller Bands
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(vertical: 8),

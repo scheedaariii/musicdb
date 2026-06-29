@@ -5,9 +5,7 @@
 // Goldene Akzente in den Titeln AI generiert
 
 import 'package:flutter/material.dart';
-import 'impressum_screen.dart';
-import 'datenschutz_screen.dart';
-import 'nutzungsbedingungen_screen.dart';
+import '../../../app/app_drawer.dart';
 
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
@@ -18,144 +16,11 @@ class InfoScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Info'),
         // Einblendendes des Hamburger Menüs
-      ),
+      ), //nav drawer laden
+      drawer: const AppDrawer(),
 
       // Drawer mit drei Menüeinträgen
-      drawer: Drawer(
-        backgroundColor: const Color(0xFFFFFFFF),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // Drawer-Header 
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color(0xFF242F40),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Icon(
-                    Icons.library_music,
-                    color: Color(0xFFCCA43B),
-                    size: 36,
-             // Bisher fehlgeschlagener Versuch ein eigenen Logo zu verwenden
-             //child: Image.asset(
-                //'assets/images/mein_logo.png',
-                // width: 44,
-                // height: 44,
-                //),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'MusicDB',
-                    style: TextStyle(
-                      color: Color(0xFFFFFFFF),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Rechtliche Informationen',
-                    style: TextStyle(
-                      color: const Color(0xFFFFFFFF).withValues(alpha: 0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Menüeintrag: Impressum
-            ListTile(
-              leading: const Icon(
-                Icons.business,
-                color: Color(0xFF242F40),
-              ),
-              title: const Text(
-                'Impressum',
-                style: TextStyle(
-                  color: Color(0xFF363636),
-                  fontSize: 15,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                // Impressum-Screen öffnen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ImpressumScreen(),
-                  ),
-                );
-              },
-            ),
-
-            const Divider(
-              indent: 16,
-              endIndent: 16,
-              color: Color(0xFFE5E5E5),
-            ),
-
-            // Menüeintrag: Datenschutz
-            ListTile(
-              leading: const Icon(
-                Icons.lock_outline,
-                color: Color(0xFF242F40),
-              ),
-              title: const Text(
-                'Datenschutz',
-                style: TextStyle(
-                  color: Color(0xFF363636),
-                  fontSize: 15,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                // Datenschutz-Screen öffnen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DatenschutzScreen(),
-                  ),
-                );
-              },
-            ),
-
-            const Divider(
-              indent: 16,
-              endIndent: 16,
-              color: Color(0xFFE5E5E5),
-            ),
-
-            // Menüeintrag: Nutzungsbedingungen
-            ListTile(
-              leading: const Icon(
-                Icons.description_outlined,
-                color: Color(0xFF242F40),
-              ),
-              title: const Text(
-                'Nutzungsbedingungen',
-                style: TextStyle(
-                  color: Color(0xFF363636),
-                  fontSize: 15,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                // Nutzungsbedingungen-Screen öffnen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NutzungsbedingungenScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      
 
       // Body: Inhalt des Info-Screens
       body: SingleChildScrollView(

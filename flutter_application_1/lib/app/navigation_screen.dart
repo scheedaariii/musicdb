@@ -15,7 +15,7 @@ class NavigationScreen extends StatefulWidget {
 
 class _NavigationScreenState extends State<NavigationScreen> {
   // Speichert den aktuell angezeigten Tab-Index (0 = Bands, 1 = Info, 2 = Profil)
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
   // Die akutellen Hauptbereiche der App
   final List<Widget> _screens = const [
