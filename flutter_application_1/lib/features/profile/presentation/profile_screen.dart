@@ -4,6 +4,9 @@
 
 import 'package:flutter/material.dart';
 import '../../../app/app_drawer.dart';
+import '../../../app/app_colors.dart';
+import '../../../app/app_widgets.dart';
+import '../../database/data/database_repository.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -27,7 +30,7 @@ class ProfileScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFF242F40),
+                color: AppColors.darkBlue,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -37,7 +40,7 @@ class ProfileScreen extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: const BoxDecoration(
-                      color: Color(0xFFCCA43B),
+                      color: AppColors.gold,
                       shape: BoxShape.circle,
                     ),
                     child: const Center(
@@ -46,7 +49,7 @@ class ProfileScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFFFFFFF),
+                          color: AppColors.white,
                         ),
                       ),
                     ),
@@ -60,7 +63,7 @@ class ProfileScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFFFFF),
+                      color: AppColors.white,
                     ),
                   ),
 
@@ -71,7 +74,7 @@ class ProfileScreen extends StatelessWidget {
                     'Leidenschaftlicher Musikfan',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFFCCA43B),
+                      color: AppColors.gold,
                     ),
                   ),
                 ],
@@ -87,16 +90,16 @@ class ProfileScreen extends StatelessWidget {
                 Expanded(
                   child: _buildStatCard(
                     label: 'Bands',
-                    value: '6',
+                    value: '${repo.bands.length}',
                     icon: Icons.library_music,
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Lieblings-Genre
+                // Anzahl Genres
                 Expanded(
                   child: _buildStatCard(
                     label: 'Genres',
-                    value: '5',
+                    value: '${repo.genres.length}',
                     icon: Icons.queue_music,
                   ),
                 ),
@@ -143,22 +146,12 @@ class ProfileScreen extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: appCardDecoration(radius: 12),
       child: Column(
         children: [
           Icon(
             icon,
-            color: const Color(0xFFCCA43B),
+            color: AppColors.gold,
             size: 28,
           ),
           const SizedBox(height: 8),
@@ -167,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF242F40),
+              color: AppColors.darkBlue,
             ),
           ),
           const SizedBox(height: 4),
@@ -175,7 +168,7 @@ class ProfileScreen extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 13,
-              color: Color(0xFF666666),
+              color: AppColors.textLight,
             ),
           ),
         ],
@@ -191,23 +184,13 @@ class ProfileScreen extends StatelessWidget {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
+      decoration: appCardDecoration(radius: 12),
       child: Row(
         children: [
           // Icon
           Icon(
             icon,
-            color: const Color(0xFFCCA43B),
+            color: AppColors.gold,
             size: 22,
           ),
 
@@ -218,7 +201,7 @@ class ProfileScreen extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 14,
-              color: Color(0xFF666666),
+              color: AppColors.textLight,
             ),
           ),
 
@@ -230,7 +213,7 @@ class ProfileScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF363636),
+              color: AppColors.text,
             ),
           ),
         ],

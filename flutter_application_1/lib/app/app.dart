@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'navigation_screen.dart';
+import 'app_colors.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -13,40 +14,48 @@ class App extends StatelessWidget {
       debugShowCheckedModeBanner: false,
 
       // Globales Theme mit der definierten Farbpalette:
-      // Mit coolors.co erstelltes Farbschema: https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
-     
+      // Mit coolors.co erstelltes Farbschema:
+      // https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
       theme: ThemeData(
         // Hauptfarbe
-        primaryColor: const Color(0xFF242F40),
+        primaryColor: AppColors.darkBlue,
 
         // App Hintergrund
-        scaffoldBackgroundColor: const Color(0xFFE5E5E5),
+        scaffoldBackgroundColor: AppColors.background,
 
         // AppBar Design
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF242F40),
-          foregroundColor: Color(0xFFFFFFFF),
+          backgroundColor: AppColors.darkBlue,
+          foregroundColor: AppColors.white,
           elevation: 0,
           titleTextStyle: TextStyle(
-            color: Color(0xFFFFFFFF),
+            color: AppColors.white,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         // BottomNavigationBar Design
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF242F40),
-          selectedItemColor: Color(0xFFCCA43B),
-          unselectedItemColor: Color(0xFFE5E5E5),
+          backgroundColor: AppColors.darkBlue,
+          selectedItemColor: AppColors.gold,
+          unselectedItemColor: AppColors.background,
         ),
 
         // Farbe für Datenkarten (weisse boxen)
-        cardColor: const Color(0xFFFFFFFF),
+        cardColor: AppColors.white,
+
+        // Der runde Plus-Button. Steht hier im Theme, damit ihn nicht
+        // jeder Screen einzeln einfärben muss.
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: AppColors.gold,
+          foregroundColor: AppColors.darkBlue,
+          shape: CircleBorder(),
+        ),
 
         // Farbschema Allg.
         colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: const Color(0xFF242F40),
-          secondary: const Color(0xFFCCA43B),
+          primary: AppColors.darkBlue,
+          secondary: AppColors.gold,
         ),
       ),
 

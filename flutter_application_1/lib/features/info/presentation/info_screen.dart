@@ -6,6 +6,8 @@
 
 import 'package:flutter/material.dart';
 import '../../../app/app_drawer.dart';
+import '../../../app/app_colors.dart';
+import '../../../app/app_widgets.dart';
 
 class InfoScreen extends StatelessWidget {
   const InfoScreen({super.key});
@@ -15,12 +17,10 @@ class InfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Info'),
-        // Einblendendes des Hamburger Menüs
-      ), //nav drawer laden
-      drawer: const AppDrawer(),
+      ),
 
-      // Drawer mit drei Menüeinträgen
-      
+      // Drawer mit den Links zu Impressum, Datenschutz und Nutzungsbedingungen
+      drawer: const AppDrawer(),
 
       // Body: Inhalt des Info-Screens
       body: SingleChildScrollView(
@@ -33,7 +33,7 @@ class InfoScreen extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: const Color(0xFF242F40),
+                color: AppColors.darkBlue,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -43,12 +43,12 @@ class InfoScreen extends StatelessWidget {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFCCA43B).withValues(alpha: 0.2),
+                      color: AppColors.gold.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.library_music,
-                      color: Color(0xFFCCA43B),
+                      color: AppColors.gold,
                       size: 44,
                     ),
                   ),
@@ -61,7 +61,7 @@ class InfoScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFFFFF),
+                      color: AppColors.white,
                     ),
                   ),
 
@@ -72,7 +72,7 @@ class InfoScreen extends StatelessWidget {
                     'Version 1.0.0',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Color(0xFFCCA43B),
+                      color: AppColors.gold,
                     ),
                   ),
                 ],
@@ -82,7 +82,7 @@ class InfoScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Über die App
-            _buildSection(
+            const SectionCard(
               title: 'Über die App',
               content:
                   'MusicDB ist deine persönliche Musik-Datenbank. '
@@ -93,7 +93,7 @@ class InfoScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Funktionen
-            _buildSection(
+            const SectionCard(
               title: 'Funktionen',
               content:
                   'Durchsuche eine kuratierte Liste von Bands, '
@@ -104,76 +104,15 @@ class InfoScreen extends StatelessWidget {
             const SizedBox(height: 12),
 
             // Entwickelt für
-            _buildSection(
+            const SectionCard(
               title: 'Entwickelt für',
               content:
                   'Diese App wurde im Rahmen des Moduls Mobile Apps '
                   'an der TEKO Schweizerische Fachschule AG entwickelt.',
             ),
 
-            const SizedBox(height: 12),
-
-            
           ],
         ),
-      ),
-    );
-  }
-
-  // Textbox-Widget
-  Widget _buildSection({required String title, required String content}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Abschnittstitel mit goldenem Akzent - Akzent wurde per AI generiert
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCCA43B),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF242F40),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // Abschnittstext
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF363636),
-              height: 1.5,
-            ),
-          ),
-        ],
       ),
     );
   }

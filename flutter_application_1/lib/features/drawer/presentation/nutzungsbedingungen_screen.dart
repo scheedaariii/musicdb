@@ -4,6 +4,7 @@
 // Titel mit goldenem Akzent -> Dieser Teil wurde ebenfalls mit AI erstellt da ich es selbst nicht hingekriegt habe die Goldakazente einzufügen.
 
 import 'package:flutter/material.dart';
+import '../../../app/app_widgets.dart';
 
 class NutzungsbedingungenScreen extends StatelessWidget {
   const NutzungsbedingungenScreen({super.key});
@@ -20,7 +21,7 @@ class NutzungsbedingungenScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection(
+            const SectionCard(
               title: 'Geltungsbereich',
               content:
                   'Diese Nutzungsbedingungen gelten für die Verwendung der MusicDB App. '
@@ -29,7 +30,7 @@ class NutzungsbedingungenScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Nutzung der App',
               content:
                   'Die MusicDB App darf ausschliesslich für private, nicht-kommerzielle Zwecke '
@@ -39,7 +40,7 @@ class NutzungsbedingungenScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Haftung',
               content:
                   'Wir übernehmen keine Haftung für die Richtigkeit und Vollständigkeit '
@@ -49,7 +50,7 @@ class NutzungsbedingungenScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Änderungen',
               content:
                   'Wir behalten uns das Recht vor, diese Nutzungsbedingungen jederzeit '
@@ -60,66 +61,6 @@ class NutzungsbedingungenScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  // Wiederverwendbares Abschnitts-Widget
-  Widget _buildSection({required String title, required String content}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Titel mit goldenem Akzent
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCCA43B),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF242F40),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // Inhalt
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF363636),
-              height: 1.6,
-            ),
-          ),
-        ],
       ),
     );
   }

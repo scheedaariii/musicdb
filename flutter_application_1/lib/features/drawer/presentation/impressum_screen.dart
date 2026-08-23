@@ -2,6 +2,7 @@
 // Textliche Inhalte wurden per AI generiert
 // Titel mit goldenem Akzent per AI generiert
 import 'package:flutter/material.dart';
+import '../../../app/app_widgets.dart';
 
 class ImpressumScreen extends StatelessWidget {
   const ImpressumScreen({super.key});
@@ -18,7 +19,7 @@ class ImpressumScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection(
+            const SectionCard(
               title: 'Angaben gemäss Informationspflicht',
               content:
                   'MusicDB App\n'
@@ -29,7 +30,7 @@ class ImpressumScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Kontakt',
               content:
                   'E-Mail: info@musicdb.ch\n'
@@ -38,7 +39,7 @@ class ImpressumScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Haftungsausschluss',
               content:
                   'Die Inhalte dieser App wurden mit grösstmöglicher Sorgfalt erstellt. '
@@ -49,7 +50,7 @@ class ImpressumScreen extends StatelessWidget {
 
             const SizedBox(height: 12),
 
-            _buildSection(
+            const SectionCard(
               title: 'Urheberrecht',
               content:
                   'Die durch uns erstellten Inhalte und Werke in dieser App unterliegen '
@@ -61,66 +62,6 @@ class ImpressumScreen extends StatelessWidget {
             const SizedBox(height: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  // Abschnitts-Widget
-  Widget _buildSection({required String title, required String content}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Titel mit goldenem Akzent
-          Row(
-            children: [
-              Container(
-                width: 4,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCCA43B),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF242F40),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 10),
-
-          // Inhalt
-          Text(
-            content,
-            style: const TextStyle(
-              fontSize: 14,
-              color: Color(0xFF363636),
-              height: 1.6,
-            ),
-          ),
-        ],
       ),
     );
   }
