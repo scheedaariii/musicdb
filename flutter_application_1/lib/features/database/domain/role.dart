@@ -1,10 +1,10 @@
 // role.dart
 // Das Datenmodell einer Rolle (Instrument bzw. Aufgabe in einer Band).
 //
-// Rollen werden wie Genres aus den Bestandsdaten abgeleitet: Sie ergeben
-// sich aus den Rollen der erfassten Musiker. Zusätzlich können über das
-// Formular eigene Rollen erfasst werden, diese haben zu Beginn noch
-// keinen Musiker.
+// Die Musiker-Zugehörigkeit (musicianIds) wird weiterhin aus den Rollen
+// der erfassten Musiker abgeleitet. Der Name und eine optionale
+// Beschreibung liegen dagegen als eigenes Dokument in der Firestore-
+// Sammlung "roles" (siehe DatabaseRepository.load/addRole).
 
 import 'package:flutter/material.dart';
 import 'database_item.dart';
@@ -17,13 +17,31 @@ class Role implements DatabaseItem {
   @override
   final String title;              // Name der Rolle, z.B. "Schlagzeug"
 
+  final String descriptionText;    // Beschreibung, falls erfasst
   final List<String> musicianIds;  // Musiker mit dieser Rolle
 
   const Role({
     required this.id,
     required this.title,
     required this.musicianIds,
+    this.descriptionText = '',
   });
+
+  // Baut eine Rolle aus einem Firestore-Dokument auf. musicianIds wird
+  // nicht gespeichert, sondern nachträglich aus den Musikern ermittelt.
+  factory Role.fromMap(String id, Map<String, dynamic> map) => Role(
+        id: id,
+        title: map['title'] as String? ?? '',
+        descriptionText: map['descriptionText'] as String? ?? '',
+        musicianIds: const [],
+      );
+
+  // Nur Name und Beschreibung werden in Firestore gespeichert, die
+  // Musiker-Zugehörigkeit ergibt sich aus den Musikern selbst.
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'descriptionText': descriptionText,
+      };
 
   int get musicianCount => musicianIds.length;
 
@@ -38,6 +56,8 @@ class Role implements DatabaseItem {
   // Der Text wird aus den Feldern gebildet
   @override
   String get description {
+    if (descriptionText.isNotEmpty) return descriptionText;
+
     if (musicianCount == 0) {
       return '$title ist als Rolle in der MusicDB erfasst. '
           'Aktuell ist dieser Rolle noch kein Musiker zugeordnet.';

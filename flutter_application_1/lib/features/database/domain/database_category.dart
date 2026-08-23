@@ -86,14 +86,14 @@ enum CategoryKind {
     required this.entryLabel,
   });
 
-  final String title;        // Name der Kategorie (z.B. "Musiker")
-  final String subtitle;     // Kurzbeschreibung für die Übersicht
+  final String title;        // Name der Kategorie 
+  final String subtitle;     // Kurzbeschreibung 
   final IconData icon;       // Icon in Liste und Header
   final String description;  // Beschreibungstext auf der Listenseite
   final String entryLabel;   // Überschrift über der Eintragsliste
 
   // Sucht die Kategorie zu einem angezeigten Namen, z.B. für das Formular.
-  // Gibt null zurück, wenn der Name zu keiner Kategorie passt.
+ 
   static CategoryKind? byTitle(String title) {
     for (final CategoryKind kind in values) {
       if (kind.title == title) return kind;

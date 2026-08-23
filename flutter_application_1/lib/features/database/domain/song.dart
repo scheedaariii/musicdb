@@ -20,6 +20,7 @@ class Song implements DatabaseItem {
   final List<String> bandNames;   // Name der Band für die Anzeige
   final int durationSeconds;      // Spieldauer in Sekunden
   final String releaseDate;       // Release-Datum, optional
+  final String descriptionText;   // Beschreibung, bei neuen Songs leer
 
   const Song({
     required this.id,
@@ -30,7 +31,34 @@ class Song implements DatabaseItem {
     this.bandIds = const [],
     this.bandNames = const [],
     this.releaseDate = '',
+    this.descriptionText = '',
   });
+
+  // Baut einen Song aus einem Firestore-Dokument auf
+  factory Song.fromMap(String id, Map<String, dynamic> map) => Song(
+        id: id,
+        title: map['title'] as String? ?? '',
+        durationSeconds: map['durationSeconds'] as int? ?? 0,
+        albumIds: List<String>.from(map['albumIds'] as List? ?? const []),
+        albumNames: List<String>.from(map['albumNames'] as List? ?? const []),
+        bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
+        bandNames: List<String>.from(map['bandNames'] as List? ?? const []),
+        releaseDate: map['releaseDate'] as String? ?? '',
+        descriptionText: map['descriptionText'] as String? ?? '',
+      );
+
+  // Die Felder, die in Firestore gespeichert werden. Die id ist keine
+  // eigene Spalte, sondern die Dokument-ID.
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'durationSeconds': durationSeconds,
+        'albumIds': albumIds,
+        'albumNames': albumNames,
+        'bandIds': bandIds,
+        'bandNames': bandNames,
+        'releaseDate': releaseDate,
+        'descriptionText': descriptionText,
+      };
 
   // Spieldauer als "5:32"
   String get duration {
@@ -52,6 +80,8 @@ class Song implements DatabaseItem {
   // Der Text wird aus den Feldern gebildet
   @override
   String get description {
+    if (descriptionText.isNotEmpty) return descriptionText;
+
     final String bandText = bandNames.isEmpty
         ? ''
         : bandNames.length == 1

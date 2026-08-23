@@ -60,6 +60,7 @@ class FormTextField extends StatelessWidget {
   final String hintText;
   final bool numbersOnly;
   final int? maxLength;
+  final int maxLines;
 
   const FormTextField({
     super.key,
@@ -69,6 +70,7 @@ class FormTextField extends StatelessWidget {
     this.hintText = '',
     this.numbersOnly = false,
     this.maxLength,
+    this.maxLines = 1,
   });
 
   @override
@@ -89,6 +91,7 @@ class FormTextField extends StatelessWidget {
                 ? [FilteringTextInputFormatter.digitsOnly]
                 : null,
             maxLength: maxLength,
+            maxLines: maxLines,
             style: _wertStil,
             decoration: InputDecoration(
               hintText: hintText,

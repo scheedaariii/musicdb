@@ -37,6 +37,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
   final TextEditingController _durationSeconds = TextEditingController();
+  final TextEditingController _description = TextEditingController();
 
   String _releaseDate = '';
 
@@ -59,6 +60,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
     _lastName.dispose();
     _foundedYear.dispose();
     _durationSeconds.dispose();
+    _description.dispose();
     super.dispose();
   }
 
@@ -149,6 +151,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
     _lastName.clear();
     _foundedYear.clear();
     _durationSeconds.clear();
+    _description.clear();
     _releaseDate = '';
     _genres.clear();
     _bands.clear();
@@ -178,6 +181,12 @@ class _AddDataScreenState extends State<AddDataScreen> {
             onAdd: (wert) => setState(() => _genres.add(wert)),
             onRemove: (wert) => setState(() => _genres.remove(wert)),
           ),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
+          ),
         ];
 
       case CategoryKind.musiker:
@@ -202,16 +211,34 @@ class _AddDataScreenState extends State<AddDataScreen> {
             onAdd: (wert) => setState(() => _roles.add(wert)),
             onRemove: (wert) => setState(() => _roles.remove(wert)),
           ),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
+          ),
         ];
 
       case CategoryKind.genres:
         return [
           FormTextField(label: 'Name', required: true, controller: _name),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
+          ),
         ];
 
       case CategoryKind.rolle:
         return [
           FormTextField(label: 'Name', required: true, controller: _name),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
+          ),
         ];
 
       case CategoryKind.alben:
@@ -239,6 +266,12 @@ class _AddDataScreenState extends State<AddDataScreen> {
             selected: _genres,
             onAdd: (wert) => setState(() => _genres.add(wert)),
             onRemove: (wert) => setState(() => _genres.remove(wert)),
+          ),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
           ),
         ];
 
@@ -274,6 +307,12 @@ class _AddDataScreenState extends State<AddDataScreen> {
             controller: _durationSeconds,
             numbersOnly: true,
             hintText: 'in Sekunden',
+          ),
+          const SizedBox(height: 16),
+          FormTextField(
+            label: 'Beschreibung',
+            controller: _description,
+            maxLines: 4,
           ),
         ];
     }
@@ -395,6 +434,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           title: name,
           genres: [..._genres],
           founded: _foundedYear.text.trim(),
+          descriptionText: _description.text.trim(),
         ));
         break;
 
@@ -408,6 +448,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           bandIds: repo.idsForBandNames(_bands),
           bandNames: [..._bands],
           roles: [..._roles],
+          descriptionText: _description.text.trim(),
         ));
         break;
 
@@ -419,6 +460,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           bandNames: [..._bands],
           genres: [..._genres],
           releaseDate: _releaseDate,
+          descriptionText: _description.text.trim(),
         ));
         break;
 
@@ -432,15 +474,16 @@ class _AddDataScreenState extends State<AddDataScreen> {
           bandNames: [..._bands],
           durationSeconds: _durationValue,
           releaseDate: _releaseDate,
+          descriptionText: _description.text.trim(),
         ));
         break;
 
       case CategoryKind.genres:
-        repo.addGenre(name);
+        repo.addGenre(name, description: _description.text.trim());
         break;
 
       case CategoryKind.rolle:
-        repo.addRole(name);
+        repo.addRole(name, description: _description.text.trim());
         break;
     }
   }

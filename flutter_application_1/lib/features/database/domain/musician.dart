@@ -12,6 +12,7 @@ class Musician implements DatabaseItem {
 
   final String firstName;        // Vorname
   final String lastName;         // Nachname
+  final String descriptionText;  // Beschreibung, bei neuen Musikern leer
   final List<String> bandIds;    // Verknüpfung zu den Bands
   final List<String> bandNames;  // Namen der Bands für die Anzeige
   final List<String> roles;      // Instrumente bzw. Rollen in der Band
@@ -23,7 +24,30 @@ class Musician implements DatabaseItem {
     required this.bandIds,
     required this.bandNames,
     required this.roles,
+    this.descriptionText = '',
   });
+
+  // Baut einen Musiker aus einem Firestore-Dokument auf
+  factory Musician.fromMap(String id, Map<String, dynamic> map) => Musician(
+        id: id,
+        firstName: map['firstName'] as String? ?? '',
+        lastName: map['lastName'] as String? ?? '',
+        descriptionText: map['descriptionText'] as String? ?? '',
+        bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
+        bandNames: List<String>.from(map['bandNames'] as List? ?? const []),
+        roles: List<String>.from(map['roles'] as List? ?? const []),
+      );
+
+  // Die Felder, die in Firestore gespeichert werden. Die id ist keine
+  // eigene Spalte, sondern die Dokument-ID.
+  Map<String, dynamic> toMap() => {
+        'firstName': firstName,
+        'lastName': lastName,
+        'descriptionText': descriptionText,
+        'bandIds': bandIds,
+        'bandNames': bandNames,
+        'roles': roles,
+      };
 
   // Vor- und Nachname zusammen
   @override
@@ -59,6 +83,8 @@ class Musician implements DatabaseItem {
   // Angaben zu realen Personen entstehen.
   @override
   String get description {
+    if (descriptionText.isNotEmpty) return descriptionText;
+
     final String bandText = bandNames.isEmpty
         ? '$title ist in der MusicDB erfasst.'
         : hasMultipleBands

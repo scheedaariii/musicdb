@@ -27,6 +27,26 @@ class Band implements DatabaseItem {
     this.founded = '',
   });
 
+  // Baut eine Band aus einem Firestore-Dokument auf
+  factory Band.fromMap(String id, Map<String, dynamic> map) => Band(
+        id: id,
+        title: map['title'] as String? ?? '',
+        descriptionText: map['descriptionText'] as String? ?? '',
+        genres: List<String>.from(map['genres'] as List? ?? const []),
+        origin: map['origin'] as String? ?? '',
+        founded: map['founded'] as String? ?? '',
+      );
+
+  // Die Felder, die in Firestore gespeichert werden. Die id ist keine
+  // eigene Spalte, sondern die Dokument-ID.
+  Map<String, dynamic> toMap() => {
+        'title': title,
+        'descriptionText': descriptionText,
+        'genres': genres,
+        'origin': origin,
+        'founded': founded,
+      };
+
   // Neu erfasste Bands haben noch keinen Beschreibungstext.
   // Dann wird der Text aus den vorhandenen Feldern gebildet.
   @override
