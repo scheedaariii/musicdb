@@ -61,20 +61,8 @@ class Album implements DatabaseItem {
   @override
   String get trailing => year;
 
-  // Der Text wird aus den Feldern gebildet
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    final String bandText = bandNames.isEmpty
-        ? '$title ist in der MusicDB als Album erfasst.'
-        : bandNames.length == 1
-            ? '$title ist in der MusicDB als Album der Band ${bandNames.first} erfasst.'
-            : '$title ist in der MusicDB als Album der Bands ${bandNames.join(', ')} erfasst.';
-
-    if (releaseDate.isEmpty) return bandText;
-    return '$bandText Als Release-Datum ist $releaseDate hinterlegt.';
-  }
+  String get description => descriptionText;
 
   @override
   IconData get icon => Icons.album;

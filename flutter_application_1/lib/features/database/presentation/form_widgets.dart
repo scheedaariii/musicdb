@@ -269,6 +269,206 @@ class FormMultiSelect extends StatelessWidget {
   }
 }
 
+// Auswahlfeld mit mehreren Auswahlen und Suchfeld, für lange Listen wie
+// alle Musiker oder alle Songs. Der Plus-Button öffnet die Auswahl als
+// Bottom-Sheet mit Filter, ein Tippen auf einen Treffer fügt ihn sofort
+// hinzu. Entfernt wird wie bei FormMultiSelect über das Kreuz am Chip.
+class FormFilterableMultiSelect extends StatelessWidget {
+  final String label;
+  final List<String> options;
+  final List<String> selected;
+  final ValueChanged<String> onAdd;
+  final ValueChanged<String> onRemove;
+
+  const FormFilterableMultiSelect({
+    super.key,
+    required this.label,
+    required this.options,
+    required this.selected,
+    required this.onAdd,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Bereits gewählte Einträge nicht nochmals anbieten
+    final List<String> offen = options.where((o) => !selected.contains(o)).toList()
+      ..sort();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FieldLabel(label: label),
+
+        Container(
+          padding: const EdgeInsets.only(left: 16, right: 4),
+          decoration: appCardDecoration(),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  offen.isEmpty ? 'Keine weitere Auswahl' : 'Hinzufügen',
+                  style: _hinweisStil,
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add_circle_outline,
+                  color: offen.isEmpty ? AppColors.textMuted : AppColors.gold,
+                ),
+                onPressed:
+                    offen.isEmpty ? null : () => _openPicker(context, offen),
+              ),
+            ],
+          ),
+        ),
+
+        // Die getroffene Auswahl
+        if (selected.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final String eintrag in selected)
+                Chip(
+                  label: Text(
+                    eintrag,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.darkBlue,
+                    ),
+                  ),
+                  backgroundColor: AppColors.white,
+                  side: const BorderSide(color: AppColors.gold),
+                  deleteIcon: const Icon(Icons.close, size: 16),
+                  deleteIconColor: AppColors.textMuted,
+                  onDeleted: () => onRemove(eintrag),
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _openPicker(BuildContext context, List<String> offen) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) =>
+          _FilterSheet(title: label, options: offen, onSelected: onAdd),
+    );
+  }
+}
+
+// Der Inhalt des Bottom-Sheets: Suchfeld oben, gefilterte Liste darunter.
+// Führt eine eigene Kopie der Optionen, damit ausgewählte Einträge sofort
+// aus der Liste verschwinden, ohne das Sheet zu schliessen.
+class _FilterSheet extends StatefulWidget {
+  final String title;
+  final List<String> options;
+  final ValueChanged<String> onSelected;
+
+  const _FilterSheet({
+    required this.title,
+    required this.options,
+    required this.onSelected,
+  });
+
+  @override
+  State<_FilterSheet> createState() => _FilterSheetState();
+}
+
+class _FilterSheetState extends State<_FilterSheet> {
+  final TextEditingController _search = TextEditingController();
+  late final List<String> _verbleibend = [...widget.options];
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String suchbegriff = _search.text.toLowerCase().trim();
+    final List<String> gefiltert = suchbegriff.isEmpty
+        ? _verbleibend
+        : _verbleibend
+            .where((o) => o.toLowerCase().contains(suchbegriff))
+            .toList();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+      ),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.darkBlue,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _search,
+              autofocus: true,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search, color: AppColors.gold),
+                hintText: 'Suchen',
+                isDense: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: gefiltert.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Keine Treffer',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: gefiltert.length,
+                      itemBuilder: (context, index) {
+                        final String eintrag = gefiltert[index];
+                        return ListTile(
+                          title: Text(eintrag, style: _wertStil),
+                          trailing:
+                              const Icon(Icons.add, color: AppColors.gold),
+                          onTap: () {
+                            widget.onSelected(eintrag);
+                            setState(() => _verbleibend.remove(eintrag));
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // Datumsfeld, öffnet den Kalender der Plattform
 class FormDateField extends StatelessWidget {
   final String label;

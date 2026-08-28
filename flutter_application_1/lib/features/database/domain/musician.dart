@@ -27,7 +27,7 @@ class Musician implements DatabaseItem {
     this.descriptionText = '',
   });
 
-  // Baut einen Musiker aus einem Firestore-Dokument auf
+  // Baut einen Musiker aus einem Firestore-Dokument auf -> Mit Hilfe von AI von lokalne Datenfiles auf Firestore umgebaut
   factory Musician.fromMap(String id, Map<String, dynamic> map) => Musician(
         id: id,
         firstName: map['firstName'] as String? ?? '',
@@ -38,8 +38,7 @@ class Musician implements DatabaseItem {
         roles: List<String>.from(map['roles'] as List? ?? const []),
       );
 
-  // Die Felder, die in Firestore gespeichert werden. Die id ist keine
-  // eigene Spalte, sondern die Dokument-ID.
+  // Die Felder, die in Firestore gespeichert werden. 
   Map<String, dynamic> toMap() => {
         'firstName': firstName,
         'lastName': lastName,
@@ -62,16 +61,6 @@ class Musician implements DatabaseItem {
   // Beschriftung im Singular oder Plural
   String get bandLabel => hasMultipleBands ? 'Bands' : 'Band';
 
-  // Alle Bands als Aufzählung, z.B. "Metallica und Nirvana"
-  String get bandsText {
-    if (bandNames.isEmpty) return '';
-    if (bandNames.length == 1) return bandNames.first;
-
-    final String alleAusserLetzte =
-        bandNames.sublist(0, bandNames.length - 1).join(', ');
-    return '$alleAusserLetzte und ${bandNames.last}';
-  }
-
   // Bei mehreren Bands werden alle mit Mittelpunkt getrennt angezeigt
   @override
   String get subtitle => bandNames.join(' · ');
@@ -79,26 +68,8 @@ class Musician implements DatabaseItem {
   @override
   String get trailing => role;
 
-  // Der Text wird aus den Feldern gebildet, damit keine erfundenen
-  // Angaben zu realen Personen entstehen.
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    final String bandText = bandNames.isEmpty
-        ? '$title ist in der MusicDB erfasst.'
-        : hasMultipleBands
-            ? '$title ist in der MusicDB als Mitglied der Bands $bandsText erfasst.'
-            : '$title ist in der MusicDB als Mitglied der Band $bandsText erfasst.';
-
-    if (roles.isEmpty) return bandText;
-
-    final String rolleText = roles.length == 1
-        ? ' Als Rolle ist $role hinterlegt.'
-        : ' Als Rollen sind $role hinterlegt.';
-
-    return '$bandText$rolleText';
-  }
+  String get description => descriptionText;
 
   @override
   IconData get icon => Icons.person_outline;

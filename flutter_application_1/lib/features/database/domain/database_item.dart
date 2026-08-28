@@ -1,11 +1,7 @@
 // database_item.dart
 // Gemeinsame Schnittstelle für alle Einträge der Datenbank
 // (Bands, Musiker, Alben, Songs und Genres).
-//
-// Jedes Modell behält seine eigenen, fachlich sinnvollen Felder und liefert
-// über diese Schnittstelle nur, was die Listen- und Detailseiten anzeigen
-// müssen. Dadurch genügt ein einziger Listen- und ein einziger Detailscreen
-// für alle Kategorien.
+// Auf diese Weise wird nur ein File für alle Detailseiten benötigt. Enstanden durch AI prüfung auf effizient, vorher wurden eigene Seite Pro Kategorie genutzt.
 
 import 'package:flutter/material.dart';
 import 'info_field.dart';
@@ -36,13 +32,8 @@ abstract class DatabaseItem {
   bool matches(String query);
 }
 
-// Gemeinsame Suchlogik für alle Modelle.
-//
-// Vorher hatte jedes Modell dieselben vier Zeilen (klein schreiben, trimmen,
-// leere Eingabe abfangen, vergleichen) noch einmal ausgeschrieben. Jetzt
-// übergibt jedes Modell nur noch die Werte, in denen gesucht werden soll.
-//
-// Beispiel: matchesQuery(query, [title, ...bandNames])
+// Suchlogik für alle Modelle.
+
 bool matchesQuery(String query, List<String> values) {
   final String q = query.toLowerCase().trim();
 

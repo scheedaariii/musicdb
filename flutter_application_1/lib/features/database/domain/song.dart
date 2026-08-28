@@ -77,37 +77,8 @@ class Song implements DatabaseItem {
   @override
   String get trailing => duration;
 
-  // Der Text wird aus den Feldern gebildet
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    final String bandText = bandNames.isEmpty
-        ? ''
-        : bandNames.length == 1
-            ? 'der Band ${bandNames.first}'
-            : 'der Bands ${bandNames.join(', ')}';
-
-    final String albumText = albumNames.isEmpty
-        ? ''
-        : albumNames.length == 1
-            ? 'vom Album ${albumNames.first}'
-            : 'von den Alben ${albumNames.join(', ')}';
-
-    // Beide Angaben zusammensetzen, je nachdem was vorhanden ist
-    final List<String> teile = [
-      if (bandText.isNotEmpty) bandText,
-      if (albumText.isNotEmpty) albumText,
-    ];
-    final String herkunft =
-        teile.isEmpty ? 'als Song' : 'als Song ${teile.join(' ')}';
-
-    final String dauerText = durationSeconds > 0
-        ? ' Die hinterlegte Spieldauer beträgt $duration Minuten.'
-        : '';
-
-    return '$title ist in der MusicDB $herkunft erfasst.$dauerText';
-  }
+  String get description => descriptionText;
 
   @override
   IconData get icon => Icons.music_note;

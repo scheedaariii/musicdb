@@ -53,22 +53,8 @@ class Role implements DatabaseItem {
   String get trailing =>
       musicianCount == 1 ? '1 Musiker' : '$musicianCount Musiker';
 
-  // Der Text wird aus den Feldern gebildet
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    if (musicianCount == 0) {
-      return '$title ist als Rolle in der MusicDB erfasst. '
-          'Aktuell ist dieser Rolle noch kein Musiker zugeordnet.';
-    }
-    if (musicianCount == 1) {
-      return '$title ist als Rolle in der MusicDB erfasst. '
-          'Aktuell ist ein Musiker mit dieser Rolle erfasst.';
-    }
-    return '$title ist als Rolle in der MusicDB erfasst. '
-        'Aktuell sind $musicianCount Musiker mit dieser Rolle erfasst.';
-  }
+  String get description => descriptionText;
 
   @override
   IconData get icon => Icons.piano;

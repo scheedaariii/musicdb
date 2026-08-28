@@ -47,19 +47,8 @@ class Band implements DatabaseItem {
         'founded': founded,
       };
 
-  // Neu erfasste Bands haben noch keinen Beschreibungstext.
-  // Dann wird der Text aus den vorhandenen Feldern gebildet.
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    final String genreText =
-        genres.isEmpty ? '' : ' Als Genre ${genres.length == 1 ? 'ist' : 'sind'} $genre hinterlegt.';
-    final String jahrText =
-        founded.isEmpty ? '' : ' Gegründet wurde sie $founded.';
-
-    return '$title ist in der MusicDB als Band erfasst.$genreText$jahrText';
-  }
+  String get description => descriptionText;
 
   // Alle Genres als Text, z.B. "Heavy Metal / Thrash Metal"
   String get genre => genres.join(' / ');

@@ -38,6 +38,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   final TextEditingController _foundedYear = TextEditingController();
   final TextEditingController _durationSeconds = TextEditingController();
   final TextEditingController _description = TextEditingController();
+  final TextEditingController _origin = TextEditingController();
 
   String _releaseDate = '';
 
@@ -61,6 +62,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
     _foundedYear.dispose();
     _durationSeconds.dispose();
     _description.dispose();
+    _origin.dispose();
     super.dispose();
   }
 
@@ -152,6 +154,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
     _foundedYear.clear();
     _durationSeconds.clear();
     _description.clear();
+    _origin.clear();
     _releaseDate = '';
     _genres.clear();
     _bands.clear();
@@ -181,6 +184,8 @@ class _AddDataScreenState extends State<AddDataScreen> {
             onAdd: (wert) => setState(() => _genres.add(wert)),
             onRemove: (wert) => setState(() => _genres.remove(wert)),
           ),
+          const SizedBox(height: 16),
+          FormTextField(label: 'Herkunft', controller: _origin),
           const SizedBox(height: 16),
           FormTextField(
             label: 'Beschreibung',
@@ -434,6 +439,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           title: name,
           genres: [..._genres],
           founded: _foundedYear.text.trim(),
+          origin: _origin.text.trim(),
           descriptionText: _description.text.trim(),
         ));
         break;

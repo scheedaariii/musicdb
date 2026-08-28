@@ -1,10 +1,5 @@
 // genre.dart
 // Das Datenmodell eines Genres.
-//
-// Die Bandzugehörigkeit (bandCount/bandIds) wird weiterhin aus den
-// Genre-Angaben der Bands abgeleitet. Der Name und eine optionale
-// Beschreibung liegen dagegen als eigenes Dokument in der Firestore-
-// Sammlung "genres" (siehe DatabaseRepository.load/addGenre).
 
 import 'package:flutter/material.dart';
 import 'database_item.dart';
@@ -15,9 +10,9 @@ class Genre implements DatabaseItem {
   final String id;
 
   @override
-  final String title;         // Name des Genres, z.B. "Thrash Metal"
+  final String title;         // Name des Genres
 
-  final String descriptionText; // Beschreibung, falls erfasst
+  final String descriptionText; // Beschreibung
   final int bandCount;        // Anzahl Bands mit diesem Genre
   final List<String> bandIds; // Verknüpfung zu diesen Bands
 
@@ -29,8 +24,7 @@ class Genre implements DatabaseItem {
     this.descriptionText = '',
   });
 
-  // Baut ein Genre aus einem Firestore-Dokument auf. bandCount/bandIds
-  // werden nicht gespeichert, sondern nachträglich aus den Bands ermittelt.
+  // Daten aus Firestore laden
   factory Genre.fromMap(String id, Map<String, dynamic> map) => Genre(
         id: id,
         title: map['title'] as String? ?? '',
@@ -39,8 +33,7 @@ class Genre implements DatabaseItem {
         bandIds: const [],
       );
 
-  // Nur Name und Beschreibung werden in Firestore gespeichert, die
-  // Bandzugehörigkeit ergibt sich aus den Bands selbst.
+  // Nur Name und Beschreibung werden in Firestore gespeichert. Der Link zwischen Band/Genre kommt von den Bands
   Map<String, dynamic> toMap() => {
         'title': title,
         'descriptionText': descriptionText,
@@ -53,22 +46,8 @@ class Genre implements DatabaseItem {
   @override
   String get trailing => bandCount == 1 ? '1 Band' : '$bandCount Bands';
 
-  // Der Text wird aus den Feldern gebildet
   @override
-  String get description {
-    if (descriptionText.isNotEmpty) return descriptionText;
-
-    if (bandCount == 0) {
-      return '$title ist eine der Musikrichtungen in der MusicDB. '
-          'Aktuell ist diesem Genre noch keine Band zugeordnet.';
-    }
-    if (bandCount == 1) {
-      return '$title ist eine der Musikrichtungen in der MusicDB. '
-          'Aktuell ist eine Band mit diesem Genre erfasst.';
-    }
-    return '$title ist eine der Musikrichtungen in der MusicDB. '
-        'Aktuell sind $bandCount Bands mit diesem Genre erfasst.';
-  }
+  String get description => descriptionText;
 
   @override
   IconData get icon => Icons.category_outlined;
