@@ -40,7 +40,9 @@ class _AddDataScreenState extends State<AddDataScreen> {
   final TextEditingController _description = TextEditingController();
   final TextEditingController _origin = TextEditingController();
 
-  String _releaseDate = '';
+  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht (Release
+  // Datum bei Alben/Songs, Geburtsdatum bei Musikern)
+  String _dateValue = '';
 
   // Mehrfachauswahlen
   final List<String> _genres = [];
@@ -155,7 +157,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
     _durationSeconds.clear();
     _description.clear();
     _origin.clear();
-    _releaseDate = '';
+    _dateValue = '';
     _genres.clear();
     _bands.clear();
     _roles.clear();
@@ -200,6 +202,14 @@ class _AddDataScreenState extends State<AddDataScreen> {
           const SizedBox(height: 16),
           FormTextField(
               label: 'Lastname', required: true, controller: _lastName),
+          const SizedBox(height: 16),
+          FormDateField(
+            label: 'Geburtsdatum',
+            required: true,
+            value: _dateValue,
+            onTap: _pickDate,
+            onClear: () => setState(() => _dateValue = ''),
+          ),
           const SizedBox(height: 16),
           FormMultiSelect(
             label: 'Bands',
@@ -252,9 +262,9 @@ class _AddDataScreenState extends State<AddDataScreen> {
           const SizedBox(height: 16),
           FormDateField(
             label: 'Release Datum',
-            value: _releaseDate,
-            onTap: _pickReleaseDate,
-            onClear: () => setState(() => _releaseDate = ''),
+            value: _dateValue,
+            onTap: _pickDate,
+            onClear: () => setState(() => _dateValue = ''),
           ),
           const SizedBox(height: 16),
           FormMultiSelect(
@@ -286,9 +296,9 @@ class _AddDataScreenState extends State<AddDataScreen> {
           const SizedBox(height: 16),
           FormDateField(
             label: 'Release Datum',
-            value: _releaseDate,
-            onTap: _pickReleaseDate,
-            onClear: () => setState(() => _releaseDate = ''),
+            value: _dateValue,
+            onTap: _pickDate,
+            onClear: () => setState(() => _dateValue = ''),
           ),
           const SizedBox(height: 16),
           FormMultiSelect(
@@ -323,8 +333,8 @@ class _AddDataScreenState extends State<AddDataScreen> {
     }
   }
 
-  // Kalender für das Release-Datum
-  Future<void> _pickReleaseDate() async {
+  // Kalender für das jeweilige Datumsfeld der Kategorie
+  Future<void> _pickDate() async {
     final DateTime? gewaehlt = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -336,7 +346,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
     setState(() {
       // Format JJJJ-MM-TT
-      _releaseDate = '${gewaehlt.year.toString().padLeft(4, '0')}-'
+      _dateValue = '${gewaehlt.year.toString().padLeft(4, '0')}-'
           '${gewaehlt.month.toString().padLeft(2, '0')}-'
           '${gewaehlt.day.toString().padLeft(2, '0')}';
     });
@@ -367,8 +377,9 @@ class _AddDataScreenState extends State<AddDataScreen> {
   bool _mandatoryFilled() {
     if (_name.text.trim().isEmpty) return false;
 
-    // Beim Musiker ist zusätzlich der Nachname Pflicht
-    if (_kind == CategoryKind.musiker && _lastName.text.trim().isEmpty) {
+    // Beim Musiker sind zusätzlich Nachname und Geburtsdatum Pflicht
+    if (_kind == CategoryKind.musiker &&
+        (_lastName.text.trim().isEmpty || _dateValue.isEmpty)) {
       return false;
     }
     return true;
@@ -396,14 +407,14 @@ class _AddDataScreenState extends State<AddDataScreen> {
       case CategoryKind.alben:
         return !repo.albums.any((a) =>
             a.title.toLowerCase() == name.toLowerCase() &&
-            a.releaseDate == _releaseDate &&
+            a.releaseDate == _dateValue &&
             _sameSet(a.bandNames, _bands) &&
             _sameSet(a.genres, _genres));
 
       case CategoryKind.songs:
         return !repo.songs.any((s) =>
             s.title.toLowerCase() == name.toLowerCase() &&
-            s.releaseDate == _releaseDate &&
+            s.releaseDate == _dateValue &&
             _sameSet(s.albumNames, _albums) &&
             _sameSet(s.bandNames, _bands) &&
             s.durationSeconds == _durationValue);
@@ -451,6 +462,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
               '$name $nachname', repo.musicians.map((m) => m.id).toList()),
           firstName: name,
           lastName: nachname,
+          dateOfBirth: _dateValue,
           bandIds: repo.idsForBandNames(_bands),
           bandNames: [..._bands],
           roles: [..._roles],
@@ -465,7 +477,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           bandIds: repo.idsForBandNames(_bands),
           bandNames: [..._bands],
           genres: [..._genres],
-          releaseDate: _releaseDate,
+          releaseDate: _dateValue,
           descriptionText: _description.text.trim(),
         ));
         break;
@@ -479,7 +491,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
           bandIds: repo.idsForBandNames(_bands),
           bandNames: [..._bands],
           durationSeconds: _durationValue,
-          releaseDate: _releaseDate,
+          releaseDate: _dateValue,
           descriptionText: _description.text.trim(),
         ));
         break;

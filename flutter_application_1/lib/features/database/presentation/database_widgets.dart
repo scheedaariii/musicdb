@@ -166,7 +166,13 @@ class SectionTitle extends StatelessWidget {
 class ItemRow extends StatelessWidget {
   final DatabaseItem item;
 
-  const ItemRow({super.key, required this.item});
+  // Wird aufgerufen, sobald die Detailseite wieder geschlossen wird. Damit
+  // kann die aufrufende Liste sich neu aufbauen, falls der Eintrag dort
+  // bearbeitet oder gelöscht wurde (Flutter baut eine Seite beim Zurück-
+  // Navigieren sonst nicht automatisch neu auf).
+  final VoidCallback? onReturn;
+
+  const ItemRow({super.key, required this.item, this.onReturn});
 
   @override
   Widget build(BuildContext context) {
@@ -174,14 +180,15 @@ class ItemRow extends StatelessWidget {
       decoration: appCardDecoration(),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               // Der ausgewählte Eintrag wird übergeben
               builder: (context) => ItemDetailScreen(item: item),
             ),
           );
+          onReturn?.call();
         },
 
         child: Padding(

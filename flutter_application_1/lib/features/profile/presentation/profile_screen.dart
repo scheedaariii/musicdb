@@ -1,6 +1,7 @@
 // profile_screen.dart
 // Der Profil-Bereich der App.
 // Zeigt ein einfaches Benutzerprofil als Platzhalter an.
+// Aktuell noch statisch
 
 import 'package:flutter/material.dart';
 import '../../../app/app_drawer.dart';

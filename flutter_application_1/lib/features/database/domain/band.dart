@@ -37,8 +37,7 @@ class Band implements DatabaseItem {
         founded: map['founded'] as String? ?? '',
       );
 
-  // Die Felder, die in Firestore gespeichert werden. Die id ist keine
-  // eigene Spalte, sondern die Dokument-ID.
+  // Die Felder, die in Firestore gespeichert werden. 
   Map<String, dynamic> toMap() => {
         'title': title,
         'descriptionText': descriptionText,

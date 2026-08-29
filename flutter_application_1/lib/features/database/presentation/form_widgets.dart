@@ -474,6 +474,7 @@ class FormDateField extends StatelessWidget {
   final String label;
   final String value;
   final String hintText;
+  final bool required;
   final VoidCallback onTap;
   final VoidCallback onClear;
 
@@ -484,6 +485,7 @@ class FormDateField extends StatelessWidget {
     required this.onTap,
     required this.onClear,
     this.hintText = 'Datum auswählen',
+    this.required = false,
   });
 
   @override
@@ -491,7 +493,7 @@ class FormDateField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FieldLabel(label: label),
+        FieldLabel(label: label, required: required),
 
         Container(
           decoration: appCardDecoration(),

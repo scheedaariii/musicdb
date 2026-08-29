@@ -12,6 +12,7 @@ class Musician implements DatabaseItem {
 
   final String firstName;        // Vorname
   final String lastName;         // Nachname
+  final String dateOfBirth;      // Geburtsdatum, Format JJJJ-MM-TT
   final String descriptionText;  // Beschreibung, bei neuen Musikern leer
   final List<String> bandIds;    // Verknüpfung zu den Bands
   final List<String> bandNames;  // Namen der Bands für die Anzeige
@@ -24,6 +25,7 @@ class Musician implements DatabaseItem {
     required this.bandIds,
     required this.bandNames,
     required this.roles,
+    this.dateOfBirth = '',
     this.descriptionText = '',
   });
 
@@ -32,16 +34,18 @@ class Musician implements DatabaseItem {
         id: id,
         firstName: map['firstName'] as String? ?? '',
         lastName: map['lastName'] as String? ?? '',
+        dateOfBirth: map['dateOfBirth'] as String? ?? '',
         descriptionText: map['descriptionText'] as String? ?? '',
         bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
         bandNames: List<String>.from(map['bandNames'] as List? ?? const []),
         roles: List<String>.from(map['roles'] as List? ?? const []),
       );
 
-  // Die Felder, die in Firestore gespeichert werden. 
+  // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
         'firstName': firstName,
         'lastName': lastName,
+        'dateOfBirth': dateOfBirth,
         'descriptionText': descriptionText,
         'bandIds': bandIds,
         'bandNames': bandNames,
@@ -61,6 +65,26 @@ class Musician implements DatabaseItem {
   // Beschriftung im Singular oder Plural
   String get bandLabel => hasMultipleBands ? 'Bands' : 'Band';
 
+  // Alter in Jahren, berechnet aus dateOfBirth. -1, wenn kein Geburtsdatum
+  // hinterlegt ist (z.B. bei noch nicht bearbeiteten Bestandsdaten).
+  int get age {
+    final DateTime? geburtstag = DateTime.tryParse(dateOfBirth);
+    if (geburtstag == null) return -1;
+
+    final DateTime heute = DateTime.now();
+    int alter = heute.year - geburtstag.year;
+
+    final bool geburtstagDiesesJahrNochNicht =
+        heute.month < geburtstag.month ||
+            (heute.month == geburtstag.month && heute.day < geburtstag.day);
+    if (geburtstagDiesesJahrNochNicht) alter--;
+
+    return alter;
+  }
+
+  // Text für den blauen Header der Detailseite, ersetzt dort die Bandliste
+  String get alterText => age < 0 ? '' : '$age Jahre';
+
   // Bei mehreren Bands werden alle mit Mittelpunkt getrennt angezeigt
   @override
   String get subtitle => bandNames.join(' · ');
@@ -76,11 +100,11 @@ class Musician implements DatabaseItem {
 
   @override
   List<InfoField> get infoFields => [
-        if (bandNames.isNotEmpty)
+        if (dateOfBirth.isNotEmpty)
           InfoField(
-            icon: Icons.library_music,
-            label: bandLabel,
-            value: bandNames.join(', '),
+            icon: Icons.calendar_today,
+            label: 'Geburtsdatum',
+            value: dateOfBirth,
           ),
         if (roles.isNotEmpty)
           InfoField(

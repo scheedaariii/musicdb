@@ -126,7 +126,7 @@ class _DatabaseCategoryScreenState extends State<DatabaseCategoryScreen> {
             else
               // Eine Box pro gefundenem Eintrag
               for (final DatabaseItem entry in gefiltert) ...[
-                ItemRow(item: entry),
+                ItemRow(item: entry, onReturn: () => setState(() {})),
                 const SizedBox(height: 12),
               ],
 

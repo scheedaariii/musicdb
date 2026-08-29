@@ -27,8 +27,7 @@ class Role implements DatabaseItem {
     this.descriptionText = '',
   });
 
-  // Baut eine Rolle aus einem Firestore-Dokument auf. musicianIds wird
-  // nicht gespeichert, sondern nachträglich aus den Musikern ermittelt.
+  // Baut eine Rolle aus einem Firestore-Dokument auf
   factory Role.fromMap(String id, Map<String, dynamic> map) => Role(
         id: id,
         title: map['title'] as String? ?? '',
@@ -36,8 +35,7 @@ class Role implements DatabaseItem {
         musicianIds: const [],
       );
 
-  // Nur Name und Beschreibung werden in Firestore gespeichert, die
-  // Musiker-Zugehörigkeit ergibt sich aus den Musikern selbst.
+  // Nur Name und Beschreibung werden in Firestore gespeichert, die Musiker-Zugehörigkeit ergibt sich aus den Musikern selbst.
   Map<String, dynamic> toMap() => {
         'title': title,
         'descriptionText': descriptionText,

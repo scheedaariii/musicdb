@@ -1,14 +1,11 @@
 // database_repository.dart
-// Hält die Daten der App zur Laufzeit, lädt sie aus Firestore und stellt
-// die Verknüpfungen her.
-//
-// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu
-// erfasste Einträge landen sofort in der jeweiligen Liste (für eine
-// reaktionsschnelle UI) und werden im Hintergrund nach Firestore geschrieben.
+// Zuständig für Die Firebase verknüpfung und das management der daten.
+// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu// erfasste Einträge landen sofort in der jeweiligen Liste und werden im Hintergrund nach Firestore geschrieben.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
+import '../../../app/app_messenger.dart';
 import '../domain/album.dart';
 import '../domain/band.dart';
 import '../domain/database_category.dart';
@@ -33,10 +30,8 @@ class DatabaseRepository {
   final List<Album> albums = [];
   final List<Song> songs = [];
 
-  // Eigenständig gespeicherte Genres und Rollen (Name + Beschreibung),
-  // aus der jeweiligen Firestore-Sammlung geladen. Die Bandzugehörigkeit
-  // bzw. Musiker-Zugehörigkeit wird davon getrennt aus bands/musicians
-  // abgeleitet, siehe die genres/roles-Getter unten.
+  // Eigenständig gespeicherte Genres und Rollen (Name + Beschreibung), aus der jeweiligen Firestore-Sammlung geladen. 
+  // Die Bandzugehörigkeit bzw. Musiker-Zugehörigkeit wird davon getrennt aus bands/musicians abgeleitet.
   final List<Genre> _storedGenres = [];
   final List<Role> _storedRoles = [];
 
@@ -67,79 +62,40 @@ class DatabaseRepository {
     songs.addAll(
         songsSnapshot.docs.map((doc) => Song.fromMap(doc.id, doc.data())));
 
-    QuerySnapshot<Map<String, dynamic>> genresSnapshot =
+    final QuerySnapshot<Map<String, dynamic>> genresSnapshot =
         await _db.collection('genres').get();
-    if (genresSnapshot.docs.isEmpty) {
-      await _migrateGenreNames();
-      genresSnapshot = await _db.collection('genres').get();
-    }
     _storedGenres.addAll(
         genresSnapshot.docs.map((doc) => Genre.fromMap(doc.id, doc.data())));
 
-    QuerySnapshot<Map<String, dynamic>> rolesSnapshot =
+    final QuerySnapshot<Map<String, dynamic>> rolesSnapshot =
         await _db.collection('roles').get();
-    if (rolesSnapshot.docs.isEmpty) {
-      await _migrateRoleNames();
-      rolesSnapshot = await _db.collection('roles').get();
-    }
     _storedRoles.addAll(
         rolesSnapshot.docs.map((doc) => Role.fromMap(doc.id, doc.data())));
 
     _loaded = true;
   }
 
-  // Einmaliger Upload der Genre-Namen, die bisher nur als Angaben bei den
-  // Bands existierten, als eigene Dokumente ohne Beschreibung. So bekommt
-  // jedes bereits vorhandene Genre wie gewünscht ein eigenes Dokument.
-  Future<void> _migrateGenreNames() async {
-    final Set<String> namen = {};
-    for (final Band band in bands) {
-      namen.addAll(band.genres);
-    }
-    if (namen.isEmpty) return;
-
-    final WriteBatch batch = _db.batch();
-    for (final String name in namen) {
-      batch.set(_db.collection('genres').doc(_slug(name)), {
-        'title': name,
-        'descriptionText': '',
-      });
-    }
-    await batch.commit();
-  }
-
-  // Einmaliger Upload der Rollen-Namen, die bisher nur als Angaben bei den
-  // Musikern existierten, als eigene Dokumente ohne Beschreibung.
-  Future<void> _migrateRoleNames() async {
-    final Set<String> namen = {};
-    for (final Musician musician in musicians) {
-      namen.addAll(musician.roles);
-    }
-    if (namen.isEmpty) return;
-
-    final WriteBatch batch = _db.batch();
-    for (final String name in namen) {
-      batch.set(_db.collection('roles').doc(_slug(name)), {
-        'title': name,
-        'descriptionText': '',
-      });
-    }
-    await batch.commit();
-  }
-
-  // Schreibt im Hintergrund nach Firestore, ohne dass die aufrufende
-  // Stelle darauf warten muss. Fehler landen in der Konsole statt die
-  // App abstürzen zu lassen.
+  // Schreibt im Hintergrund nach Firestore, ohne dass die App darauf warten
+  // muss. Schlägt der Schreibvorgang fehl (z.B. keine Internetverbindung),
+  // bleibt die bereits lokal geänderte Ansicht bestehen - die Nutzerin/der
+  // Nutzer wird aber per SnackBar informiert, statt dass der Fehler nur in
+  // der Konsole landet und die Änderung unbemerkt verloren geht.
   void _write(Future<void> Function() write) {
     write().catchError((Object error) {
       debugPrint('Firestore-Schreibvorgang fehlgeschlagen: $error');
+      appMessengerKey.currentState?.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Speichern fehlgeschlagen. Bitte Internetverbindung prüfen.',
+          ),
+        ),
+      );
     });
   }
 
   // ---------- Abgeleitete Listen ----------
 
-  // Genres ergeben sich aus den Bands, ergänzt um eigenständig erfasste
-  // Genres. Die Beschreibung kommt, falls vorhanden, aus _storedGenres.
+  // Genres ergeben sich aus den Bands, ergänzt um eigenständig erfasste Genres. Die Beschreibung kommt, falls vorhanden, aus _storedGenres.
   List<Genre> get genres {
     final Map<String, List<String>> bandsProGenre = {};
 
@@ -157,7 +113,7 @@ class DatabaseRepository {
     return [
       for (final String name in namen)
         Genre(
-          id: _slug(name),
+          id: _genreId(name),
           title: name,
           descriptionText: _genreDescription(name),
           bandCount: bandsProGenre[name]!.length,
@@ -185,7 +141,7 @@ class DatabaseRepository {
     return [
       for (final String name in namen)
         Role(
-          id: _slug(name),
+          id: _roleId(name),
           title: name,
           descriptionText: _roleDescription(name),
           musicianIds: musikerProRolle[name]!,
@@ -207,6 +163,24 @@ class DatabaseRepository {
       if (eintrag.title == title) return eintrag.descriptionText;
     }
     return '';
+  }
+
+  // Die ID eines gespeicherten Dokuments bleibt fest, auch wenn der Name
+  // sich später ändert (renameGenre/renameRole). Ohne diese Zuordnung würde
+  // die angezeigte ID bei jeder Umbenennung neu aus dem Namen gebildet und
+  // nicht mehr zum tatsächlichen Firestore-Dokument passen.
+  String _genreId(String title) {
+    for (final Genre eintrag in _storedGenres) {
+      if (eintrag.title == title) return eintrag.id;
+    }
+    return _slug(title);
+  }
+
+  String _roleId(String title) {
+    for (final Role eintrag in _storedRoles) {
+      if (eintrag.title == title) return eintrag.id;
+    }
+    return _slug(title);
   }
 
   // Namen für die Auswahl-Listen im Formular
@@ -505,6 +479,165 @@ class DatabaseRepository {
         .set(aktualisiert.toMap()));
   }
 
+  // ---------- Namen umbenennen ----------
+  // Der Name eines Bands/Albums wird bei jedem anderen Eintrag, der darauf
+  // verweist, zusätzlich als Text mitgespeichert (z.B. Musician.bandNames).
+  // Diese Methoden ziehen eine Umbenennung dort nach. Sie ändern nur die
+  // Kopien bei den anderen Einträgen - der Eintrag selbst wird bereits über
+  // updateBand/updateAlbum mit dem neuen Namen gespeichert.
+  // Für Musiker und Songs gibt es keine solche Kopie irgendwo, ihr Name
+  // lässt sich daher direkt über updateMusician/updateSong ändern.
+
+  void cascadeBandRename(String bandId, String newTitle) {
+    for (final Musician musician in [...musicians]) {
+      final int index = musician.bandIds.indexOf(bandId);
+      if (index == -1) continue;
+      final List<String> bandNames = [...musician.bandNames];
+      bandNames[index] = newTitle;
+      updateMusician(Musician(
+        id: musician.id,
+        firstName: musician.firstName,
+        lastName: musician.lastName,
+        dateOfBirth: musician.dateOfBirth,
+        descriptionText: musician.descriptionText,
+        bandIds: musician.bandIds,
+        bandNames: bandNames,
+        roles: musician.roles,
+      ));
+    }
+    for (final Album album in [...albums]) {
+      final int index = album.bandIds.indexOf(bandId);
+      if (index == -1) continue;
+      final List<String> bandNames = [...album.bandNames];
+      bandNames[index] = newTitle;
+      updateAlbum(Album(
+        id: album.id,
+        title: album.title,
+        bandIds: album.bandIds,
+        bandNames: bandNames,
+        genres: album.genres,
+        releaseDate: album.releaseDate,
+        descriptionText: album.descriptionText,
+      ));
+    }
+    for (final Song song in [...songs]) {
+      final int index = song.bandIds.indexOf(bandId);
+      if (index == -1) continue;
+      final List<String> bandNames = [...song.bandNames];
+      bandNames[index] = newTitle;
+      updateSong(Song(
+        id: song.id,
+        title: song.title,
+        durationSeconds: song.durationSeconds,
+        albumIds: song.albumIds,
+        albumNames: song.albumNames,
+        bandIds: song.bandIds,
+        bandNames: bandNames,
+        releaseDate: song.releaseDate,
+        descriptionText: song.descriptionText,
+      ));
+    }
+  }
+
+  void cascadeAlbumRename(String albumId, String newTitle) {
+    for (final Song song in [...songs]) {
+      final int index = song.albumIds.indexOf(albumId);
+      if (index == -1) continue;
+      final List<String> albumNames = [...song.albumNames];
+      albumNames[index] = newTitle;
+      updateSong(Song(
+        id: song.id,
+        title: song.title,
+        durationSeconds: song.durationSeconds,
+        albumIds: song.albumIds,
+        albumNames: albumNames,
+        bandIds: song.bandIds,
+        bandNames: song.bandNames,
+        releaseDate: song.releaseDate,
+        descriptionText: song.descriptionText,
+      ));
+    }
+  }
+
+  // Genre und Rolle sind bei Bands/Musikern nicht per ID verknüpft, sondern
+  // rein über den Namen (z.B. Band.genres). Eine Umbenennung ersetzt daher
+  // den Text bei jedem Band bzw. Musiker, der den alten Namen enthält, und
+  // aktualisiert danach das eigene Dokument. Gab es noch keins (ein Genre
+  // kann rein abgeleitet existieren, ohne eigene Beschreibung), wird jetzt
+  // eins angelegt - sonst würde die ID beim nächsten Umbenennen wieder neu
+  // aus dem (dann alten) Namen gebildet.
+  void renameGenre(String genreId, String oldTitle, String newTitle) {
+    if (oldTitle == newTitle) return;
+
+    for (final Band band in [...bands]) {
+      if (!band.genres.contains(oldTitle)) continue;
+      updateBand(Band(
+        id: band.id,
+        title: band.title,
+        origin: band.origin,
+        founded: band.founded,
+        descriptionText: band.descriptionText,
+        genres: [
+          for (final String genre in band.genres)
+            genre == oldTitle ? newTitle : genre,
+        ],
+      ));
+    }
+
+    final int index = _storedGenres.indexWhere((g) => g.id == genreId);
+    final Genre aktualisiert = Genre(
+      id: genreId,
+      title: newTitle,
+      descriptionText:
+          index == -1 ? '' : _storedGenres[index].descriptionText,
+      bandCount: index == -1 ? 0 : _storedGenres[index].bandCount,
+      bandIds: index == -1 ? const [] : _storedGenres[index].bandIds,
+    );
+    if (index == -1) {
+      _storedGenres.add(aktualisiert);
+    } else {
+      _storedGenres[index] = aktualisiert;
+    }
+    _write(() =>
+        _db.collection('genres').doc(genreId).set(aktualisiert.toMap()));
+  }
+
+  void renameRole(String roleId, String oldTitle, String newTitle) {
+    if (oldTitle == newTitle) return;
+
+    for (final Musician musician in [...musicians]) {
+      if (!musician.roles.contains(oldTitle)) continue;
+      updateMusician(Musician(
+        id: musician.id,
+        firstName: musician.firstName,
+        lastName: musician.lastName,
+        dateOfBirth: musician.dateOfBirth,
+        descriptionText: musician.descriptionText,
+        bandIds: musician.bandIds,
+        bandNames: musician.bandNames,
+        roles: [
+          for (final String rolle in musician.roles)
+            rolle == oldTitle ? newTitle : rolle,
+        ],
+      ));
+    }
+
+    final int index = _storedRoles.indexWhere((r) => r.id == roleId);
+    final Role aktualisiert = Role(
+      id: roleId,
+      title: newTitle,
+      descriptionText: index == -1 ? '' : _storedRoles[index].descriptionText,
+      musicianIds: index == -1 ? const [] : _storedRoles[index].musicianIds,
+    );
+    if (index == -1) {
+      _storedRoles.add(aktualisiert);
+    } else {
+      _storedRoles[index] = aktualisiert;
+    }
+    _write(() =>
+        _db.collection('roles').doc(roleId).set(aktualisiert.toMap()));
+  }
+
   // ---------- Verknüpfungen von der Gegenseite ändern ----------
   // Eine Detailseite kann eine Verknüpfung zeigen, die als Feld beim
   // jeweils anderen Eintrag gespeichert ist (z.B. zeigt eine Band ihre
@@ -756,6 +889,71 @@ class DatabaseRepository {
     _storedRoles.add(eintrag);
     _write(
         () => _db.collection('roles').doc(eintrag.id).set(eintrag.toMap()));
+  }
+
+  // ---------- Einträge löschen ----------
+  // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen
+  // er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band
+  // bei jedem ihrer Musiker, Alben und Songs). Dafür werden dieselben
+  // Methoden wiederverwendet, die auch beim Bearbeiten eine Verknüpfung
+  // entfernen.
+
+  void deleteBand(String id) {
+    for (final Musician musician in [...musicians]) {
+      if (musician.bandIds.contains(id)) {
+        removeBandFromMusician(musician.id, id);
+      }
+    }
+    for (final Album album in [...albums]) {
+      if (album.bandIds.contains(id)) removeBandFromAlbum(album.id, id);
+    }
+    for (final Song song in [...songs]) {
+      if (song.bandIds.contains(id)) removeBandFromSong(song.id, id);
+    }
+
+    bands.removeWhere((b) => b.id == id);
+    _write(() => _db.collection('bands').doc(id).delete());
+  }
+
+  void deleteMusician(String id) {
+    musicians.removeWhere((m) => m.id == id);
+    _write(() => _db.collection('musicians').doc(id).delete());
+  }
+
+  void deleteAlbum(String id) {
+    for (final Song song in [...songs]) {
+      if (song.albumIds.contains(id)) removeAlbumFromSong(song.id, id);
+    }
+
+    albums.removeWhere((a) => a.id == id);
+    _write(() => _db.collection('albums').doc(id).delete());
+  }
+
+  void deleteSong(String id) {
+    songs.removeWhere((s) => s.id == id);
+    _write(() => _db.collection('songs').doc(id).delete());
+  }
+
+  // Genre und Rolle sind bei Bands/Musikern per Name verknüpft, nicht per
+  // ID, daher wird hier zusätzlich der Titel gebraucht.
+  void deleteGenre(String id, String title) {
+    for (final Band band in [...bands]) {
+      if (band.genres.contains(title)) removeGenreFromBand(band.id, title);
+    }
+
+    _storedGenres.removeWhere((g) => g.id == id);
+    _write(() => _db.collection('genres').doc(id).delete());
+  }
+
+  void deleteRole(String id, String title) {
+    for (final Musician musician in [...musicians]) {
+      if (musician.roles.contains(title)) {
+        removeRoleFromMusician(musician.id, title);
+      }
+    }
+
+    _storedRoles.removeWhere((r) => r.id == id);
+    _write(() => _db.collection('roles').doc(id).delete());
   }
 
   // IDs für neue Einträge, mit Zähler gegen Doppelvergabe

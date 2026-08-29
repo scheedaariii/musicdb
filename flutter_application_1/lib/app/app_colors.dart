@@ -38,4 +38,7 @@ class AppColors {
 
   // Schatten unter den Karten
   static const Color shadow = Color.fromRGBO(0, 0, 0, 0.06);
+
+  // Löschen und andere endgültige Aktionen
+  static const Color danger = Color(0xFFC0392B);
 }

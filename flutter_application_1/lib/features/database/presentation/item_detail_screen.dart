@@ -4,12 +4,12 @@
 // Album, Song, Genre und Rolle liefern über die Schnittstelle DatabaseItem
 // ihre eigenen Felder, dieser Screen stellt sie einheitlich dar.
 //
-// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus. Der
-// Name/Titel eines Eintrags bleibt bewusst nicht editierbar: Er ist bei
-// jedem anderen Eintrag, der darauf verweist, als Text mitgespeichert
-// (z.B. Musician.bandNames), eine Umbenennung müsste all diese Kopien
-// nachziehen. Alle anderen Felder lassen sich anpassen, sobald etwas
-// geändert wurde erscheint der Speichern-Button.
+// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus. Auch
+// der Name/Titel ist editierbar. Da er bei jedem anderen Eintrag, der
+// darauf verweist, als Text mitgespeichert ist (z.B. Musician.bandNames),
+// zieht das Speichern eine Umbenennung dort nach (siehe
+// DatabaseRepository.cascadeBandRename/cascadeAlbumRename/renameGenre/
+// renameRole). Sobald etwas geändert wurde, erscheint der Speichern-Button.
 //
 // Verknüpfungen, die auf der Detailseite nur als Liste erscheinen (z.B.
 // die Songs einer Band), werden nicht bei der Band selbst gespeichert,
@@ -58,11 +58,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   late DatabaseItem _item = widget.item;
 
   // ---------- Eingabefelder für den Bearbeitungsmodus ----------
+  // Name/Titel: bei Band, Album, Song, Genre und Rolle
+  final TextEditingController _titleField = TextEditingController();
+  // Vor- und Nachname: nur bei Musikern statt _titleField
+  final TextEditingController _firstName = TextEditingController();
+  final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
   final TextEditingController _origin = TextEditingController();
   final TextEditingController _durationSeconds = TextEditingController();
   final TextEditingController _description = TextEditingController();
-  String _releaseDate = '';
+  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht (Release
+  // Datum bei Alben/Songs, Geburtsdatum bei Musikern)
+  String _dateValue = '';
 
   // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert)
   final List<String> _genreSelection = [];
@@ -80,6 +87,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   // Die Ausgangswerte der Textfelder, um echte Textänderungen von blossem
   // Antippen (Cursor setzen) zu unterscheiden. TextEditingController meldet
   // nämlich auch reine Cursor-Bewegungen als Änderung.
+  String _originalTitle = '';
+  String _originalFirstName = '';
+  String _originalLastName = '';
   String _originalFoundedYear = '';
   String _originalOrigin = '';
   String _originalDuration = '';
@@ -88,6 +98,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _titleField.addListener(_checkTextDirty);
+    _firstName.addListener(_checkTextDirty);
+    _lastName.addListener(_checkTextDirty);
     _foundedYear.addListener(_checkTextDirty);
     _origin.addListener(_checkTextDirty);
     _durationSeconds.addListener(_checkTextDirty);
@@ -96,6 +109,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   @override
   void dispose() {
+    _titleField.dispose();
+    _firstName.dispose();
+    _lastName.dispose();
     _foundedYear.dispose();
     _origin.dispose();
     _durationSeconds.dispose();
@@ -114,7 +130,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   void _checkTextDirty() {
     if (_populating) return;
 
-    final bool geaendert = _foundedYear.text != _originalFoundedYear ||
+    final bool geaendert = _titleField.text != _originalTitle ||
+        _firstName.text != _originalFirstName ||
+        _lastName.text != _originalLastName ||
+        _foundedYear.text != _originalFoundedYear ||
         _origin.text != _originalOrigin ||
         _durationSeconds.text != _originalDuration ||
         _description.text != _originalDescription;
@@ -128,11 +147,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final DatabaseItem item = _item;
     _populating = true;
 
+    _titleField.clear();
+    _firstName.clear();
+    _lastName.clear();
     _foundedYear.clear();
     _origin.clear();
     _durationSeconds.clear();
     _description.text = _descriptionTextOf(item);
-    _releaseDate = '';
+    _dateValue = '';
     _genreSelection.clear();
     _bandSelection.clear();
     _roleSelection.clear();
@@ -143,6 +165,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _relatedSongSelection.clear();
 
     if (item is Band) {
+      _titleField.text = item.title;
       _foundedYear.text = item.founded;
       _origin.text = item.origin;
       _genreSelection.addAll(item.genres);
@@ -156,31 +179,41 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           .where((s) => s.bandIds.contains(item.id))
           .map((s) => s.title));
     } else if (item is Musician) {
+      _firstName.text = item.firstName;
+      _lastName.text = item.lastName;
+      _dateValue = item.dateOfBirth;
       _bandSelection.addAll(item.bandNames);
       _roleSelection.addAll(item.roles);
     } else if (item is Album) {
-      _releaseDate = item.releaseDate;
+      _titleField.text = item.title;
+      _dateValue = item.releaseDate;
       _bandSelection.addAll(item.bandNames);
       _genreSelection.addAll(item.genres);
       _relatedSongSelection.addAll(repo.songs
           .where((s) => s.albumIds.contains(item.id))
           .map((s) => s.title));
     } else if (item is Song) {
-      _releaseDate = item.releaseDate;
+      _titleField.text = item.title;
+      _dateValue = item.releaseDate;
       _durationSeconds.text =
           item.durationSeconds > 0 ? item.durationSeconds.toString() : '';
       _albumSelection.addAll(item.albumNames);
       _bandSelection.addAll(item.bandNames);
     } else if (item is Genre) {
+      _titleField.text = item.title;
       _relatedBandSelection.addAll(item.bandIds
           .map((id) => repo.bandById(id)?.title)
           .whereType<String>());
     } else if (item is Role) {
+      _titleField.text = item.title;
       _relatedMusicianSelection.addAll(item.musicianIds
           .map((id) => repo.musicianById(id)?.title)
           .whereType<String>());
     }
 
+    _originalTitle = _titleField.text;
+    _originalFirstName = _firstName.text;
+    _originalLastName = _lastName.text;
     _originalFoundedYear = _foundedYear.text;
     _originalOrigin = _origin.text;
     _originalDuration = _durationSeconds.text;
@@ -207,15 +240,189 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     });
   }
 
+  // ---------- Löschen ----------
+
+  Future<void> _confirmDelete() async {
+    final bool? bestaetigt = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        content: const Text(
+          'Wollen Sie den Eintrag wirklich löschen? '
+          'Das Element wird komplett gelöscht!',
+          style: TextStyle(fontSize: 15, color: AppColors.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Abbrechen',
+              style: TextStyle(
+                color: AppColors.darkBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Löschen',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (bestaetigt != true) return;
+    _delete();
+  }
+
+  // Löscht den Eintrag überall, auch bei jedem anderen Eintrag, der auf ihn
+  // verweist (siehe die delete-Methoden im Repository). Danach gibt es
+  // nichts mehr anzuzeigen, also wird die Seite direkt geschlossen.
+  void _delete() {
+    final DatabaseItem item = _item;
+
+    if (item is Band) {
+      repo.deleteBand(item.id);
+    } else if (item is Musician) {
+      repo.deleteMusician(item.id);
+    } else if (item is Album) {
+      repo.deleteAlbum(item.id);
+    } else if (item is Song) {
+      repo.deleteSong(item.id);
+    } else if (item is Genre) {
+      repo.deleteGenre(item.id, item.title);
+    } else if (item is Role) {
+      repo.deleteRole(item.id, item.title);
+    }
+
+    Navigator.pop(context);
+  }
+
   // ---------- Speichern ----------
+
+  // Prüft Pflichtfelder, bevor gespeichert wird: der Name (bzw. Vor- und
+  // Nachname bei Musikern) darf nie leer sein, und das Geburtsdatum bei
+  // Musikern darf auch beim Bearbeiten nicht entfernt werden.
+  void _onSave() {
+    if (_item is Musician) {
+      if (_firstName.text.trim().isEmpty || _lastName.text.trim().isEmpty) {
+        _showMessage('Bitte Vor- und Nachname angeben!');
+        return;
+      }
+      if (_dateValue.isEmpty) {
+        _showMessage('Bitte das Geburtsdatum angeben!');
+        return;
+      }
+    } else if (_titleField.text.trim().isEmpty) {
+      _showMessage('Bitte einen Namen angeben!');
+      return;
+    }
+
+    if (!_isNameUnique()) {
+      _showMessage('Eintrag ist nicht einzigartig, bitte anpassen!');
+      return;
+    }
+
+    _save();
+  }
+
+  // Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben
+  // Kategorie vorkommt. Wichtig vor allem bei Genre und Rolle: Ihre
+  // Verknüpfung läuft rein über den Namen (siehe Band.genres/Musician.roles),
+  // zwei Einträge mit demselben Namen würden dort sonst ungewollt zu einem
+  // verschmelzen. Dieselbe Prüfung samt Meldung nutzt auch der Erfassungs-
+  // Screen beim Neuanlegen (siehe add_data_screen.dart, _isUnique).
+  bool _isNameUnique() {
+    final DatabaseItem item = _item;
+
+    if (item is Band) {
+      final String neuerTitel = _titleField.text.trim();
+      return !repo.bands.any((b) =>
+          b.id != item.id &&
+          b.title.toLowerCase() == neuerTitel.toLowerCase());
+    }
+    if (item is Musician) {
+      final String vorname = _firstName.text.trim();
+      final String nachname = _lastName.text.trim();
+      return !repo.musicians.any((m) =>
+          m.id != item.id &&
+          m.firstName.toLowerCase() == vorname.toLowerCase() &&
+          m.lastName.toLowerCase() == nachname.toLowerCase());
+    }
+    if (item is Album) {
+      final String neuerTitel = _titleField.text.trim();
+      return !repo.albums.any((a) =>
+          a.id != item.id &&
+          a.title.toLowerCase() == neuerTitel.toLowerCase());
+    }
+    if (item is Song) {
+      final String neuerTitel = _titleField.text.trim();
+      return !repo.songs.any((s) =>
+          s.id != item.id &&
+          s.title.toLowerCase() == neuerTitel.toLowerCase());
+    }
+    if (item is Genre) {
+      final String neuerName = _titleField.text.trim();
+      if (neuerName.toLowerCase() == item.title.toLowerCase()) return true;
+      return !repo.genreNames
+          .any((g) => g.toLowerCase() == neuerName.toLowerCase());
+    }
+    if (item is Role) {
+      final String neuerName = _titleField.text.trim();
+      if (neuerName.toLowerCase() == item.title.toLowerCase()) return true;
+      return !repo.roleNames
+          .any((r) => r.toLowerCase() == neuerName.toLowerCase());
+    }
+    return true;
+  }
+
+  void _showMessage(String text) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        content: Text(
+          text,
+          style: const TextStyle(fontSize: 15, color: AppColors.text),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                color: AppColors.darkBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _save() {
     final DatabaseItem item = _item;
 
     if (item is Band) {
+      final String neuerTitel = _titleField.text.trim();
+      final bool umbenannt = neuerTitel != item.title;
+
       repo.updateBand(Band(
         id: item.id,
-        title: item.title,
+        title: neuerTitel,
         genres: [..._genreSelection],
         founded: _foundedYear.text.trim(),
         origin: _origin.text.trim(),
@@ -272,12 +479,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         },
       );
 
+      if (umbenannt) repo.cascadeBandRename(item.id, neuerTitel);
+
       _item = repo.bandById(item.id) ?? item;
     } else if (item is Musician) {
       repo.updateMusician(Musician(
         id: item.id,
-        firstName: item.firstName,
-        lastName: item.lastName,
+        firstName: _firstName.text.trim(),
+        lastName: _lastName.text.trim(),
+        dateOfBirth: _dateValue,
         bandIds: repo.idsForBandNames(_bandSelection),
         bandNames: [..._bandSelection],
         roles: [..._roleSelection],
@@ -285,13 +495,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ));
       _item = repo.musicianById(item.id) ?? item;
     } else if (item is Album) {
+      final String neuerTitel = _titleField.text.trim();
+      final bool umbenannt = neuerTitel != item.title;
+
       repo.updateAlbum(Album(
         id: item.id,
-        title: item.title,
+        title: neuerTitel,
         bandIds: repo.idsForBandNames(_bandSelection),
         bandNames: [..._bandSelection],
         genres: [..._genreSelection],
-        releaseDate: _releaseDate,
+        releaseDate: _dateValue,
         descriptionText: _description.text.trim(),
       ));
 
@@ -311,22 +524,24 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         },
       );
 
+      if (umbenannt) repo.cascadeAlbumRename(item.id, neuerTitel);
+
       _item = repo.albumById(item.id) ?? item;
     } else if (item is Song) {
       repo.updateSong(Song(
         id: item.id,
-        title: item.title,
+        title: _titleField.text.trim(),
         durationSeconds: int.tryParse(_durationSeconds.text.trim()) ?? 0,
         albumIds: repo.idsForAlbumNames(_albumSelection),
         albumNames: [..._albumSelection],
         bandIds: repo.idsForBandNames(_bandSelection),
         bandNames: [..._bandSelection],
-        releaseDate: _releaseDate,
+        releaseDate: _dateValue,
         descriptionText: _description.text.trim(),
       ));
       _item = repo.songById(item.id) ?? item;
     } else if (item is Genre) {
-      repo.updateGenreDescription(item.id, _description.text.trim());
+      final String neuerName = _titleField.text.trim();
 
       _syncReverse(
         before: repo.bands
@@ -344,13 +559,18 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         },
       );
 
+      if (neuerName != item.title) {
+        repo.renameGenre(item.id, item.title, neuerName);
+      }
+      repo.updateGenreDescription(item.id, _description.text.trim());
+
       DatabaseItem aktualisiertesGenre = item;
       for (final Genre genre in repo.genres) {
         if (genre.id == item.id) aktualisiertesGenre = genre;
       }
       _item = aktualisiertesGenre;
     } else if (item is Role) {
-      repo.updateRoleDescription(item.id, _description.text.trim());
+      final String neuerName = _titleField.text.trim();
 
       _syncReverse(
         before: repo.musicians
@@ -371,6 +591,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           }
         },
       );
+
+      if (neuerName != item.title) {
+        repo.renameRole(item.id, item.title, neuerName);
+      }
+      repo.updateRoleDescription(item.id, _description.text.trim());
 
       DatabaseItem aktualisierteRolle = item;
       for (final Role rolle in repo.roles) {
@@ -403,7 +628,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
   }
 
-  Future<void> _pickReleaseDate() async {
+  Future<void> _pickDate() async {
     final DateTime? gewaehlt = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -413,7 +638,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     if (gewaehlt == null) return;
 
     setState(() {
-      _releaseDate = '${gewaehlt.year.toString().padLeft(4, '0')}-'
+      _dateValue = '${gewaehlt.year.toString().padLeft(4, '0')}-'
           '${gewaehlt.month.toString().padLeft(2, '0')}-'
           '${gewaehlt.day.toString().padLeft(2, '0')}';
     });
@@ -425,6 +650,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   List<Widget> _buildEditableFields(DatabaseItem item) {
     if (item is Band) {
       return [
+        FormTextField(label: 'Name', controller: _titleField, required: true),
+        const SizedBox(height: 16),
         FormTextField(
           label: 'Gründungsjahr',
           controller: _foundedYear,
@@ -498,6 +725,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (item is Musician) {
       return [
+        FormTextField(label: 'Vorname', controller: _firstName, required: true),
+        const SizedBox(height: 16),
+        FormTextField(label: 'Nachname', controller: _lastName, required: true),
+        const SizedBox(height: 16),
+        FormDateField(
+          label: 'Geburtsdatum',
+          required: true,
+          value: _dateValue,
+          onTap: _pickDate,
+          onClear: () {
+            setState(() => _dateValue = '');
+            _markDirty();
+          },
+        ),
+        const SizedBox(height: 16),
         FormFilterableMultiSelect(
           label: 'Bands',
           options: repo.bandNames,
@@ -533,12 +775,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (item is Album) {
       return [
+        FormTextField(label: 'Titel', controller: _titleField, required: true),
+        const SizedBox(height: 16),
         FormDateField(
           label: 'Release Datum',
-          value: _releaseDate,
-          onTap: _pickReleaseDate,
+          value: _dateValue,
+          onTap: _pickDate,
           onClear: () {
-            setState(() => _releaseDate = '');
+            setState(() => _dateValue = '');
             _markDirty();
           },
         ),
@@ -592,12 +836,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (item is Song) {
       return [
+        FormTextField(label: 'Titel', controller: _titleField, required: true),
+        const SizedBox(height: 16),
         FormDateField(
           label: 'Release Datum',
-          value: _releaseDate,
-          onTap: _pickReleaseDate,
+          value: _dateValue,
+          onTap: _pickDate,
           onClear: () {
-            setState(() => _releaseDate = '');
+            setState(() => _dateValue = '');
             _markDirty();
           },
         ),
@@ -644,6 +890,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (item is Genre) {
       return [
+        FormTextField(label: 'Name', controller: _titleField, required: true),
+        const SizedBox(height: 16),
         FormTextField(
             label: 'Beschreibung', controller: _description, maxLines: 4),
         const SizedBox(height: 16),
@@ -665,6 +913,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
     if (item is Role) {
       return [
+        FormTextField(label: 'Name', controller: _titleField, required: true),
+        const SizedBox(height: 16),
         FormTextField(
             label: 'Beschreibung', controller: _description, maxLines: 4),
         const SizedBox(height: 16),
@@ -703,15 +953,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
               icon: const Icon(Icons.close),
               tooltip: 'Abbrechen',
               onPressed: _cancelEditing,
-            )
-          else
-            TextButton.icon(
-              onPressed: _startEditing,
-              icon: const Icon(Icons.edit_outlined, color: AppColors.white),
-              label: const Text(
-                'Bearbeiten',
-                style: TextStyle(color: AppColors.white),
-              ),
             ),
         ],
       ),
@@ -722,11 +963,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header mit Icon und Name, unabhängig vom Bearbeitungsmodus
+            // Header mit Icon und Name, unabhängig vom Bearbeitungsmodus.
+            // Bei Musikern zeigt der Header das Alter statt der Bands, da
+            // die Bands bereits in der eigenen Liste weiter unten stehen.
             DetailHeader(
               icon: item.icon,
               title: item.title,
-              subtitle: item.subtitle,
+              subtitle: item is Musician ? item.alterText : item.subtitle,
             ),
 
             const SizedBox(height: 20),
@@ -769,7 +1012,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const SizedBox(height: 12),
 
                 for (final DatabaseItem related in section.items) ...[
-                  ItemRow(item: related),
+                  ItemRow(
+                    item: related,
+                    onReturn: () => setState(() {}),
+                  ),
                   const SizedBox(height: 12),
                 ],
               ],
@@ -780,17 +1026,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
       ),
 
-      // Erscheint erst, sobald im Bearbeitungsmodus etwas geändert wurde.
+      // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas
+      // geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander.
       // Ohne eigene shape würde das globale Theme (CircleBorder, gedacht für
       // den runden Plus-Button) auch hier greifen und den Text abschneiden.
-      floatingActionButton: (_editing && _dirty)
-          ? FloatingActionButton.extended(
-              onPressed: _save,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Speichern'),
-              shape: const StadiumBorder(),
-            )
-          : null,
+      floatingActionButton: _editing
+          ? (_dirty
+              ? FloatingActionButton.extended(
+                  onPressed: _onSave,
+                  icon: const Icon(Icons.save_outlined),
+                  label: const Text('Speichern'),
+                  shape: const StadiumBorder(),
+                )
+              : null)
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'bearbeiten',
+                  onPressed: _startEditing,
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Bearbeiten'),
+                  shape: const StadiumBorder(),
+                ),
+                const SizedBox(width: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'loeschen',
+                  onPressed: _confirmDelete,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Löschen'),
+                  shape: const StadiumBorder(),
+                  backgroundColor: AppColors.danger,
+                  foregroundColor: AppColors.white,
+                ),
+              ],
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
 
       // Bottom Navigation auch auf der Detailseite
       bottomNavigationBar: const AppBottomNav(popToRoot: true),
