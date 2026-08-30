@@ -1,8 +1,4 @@
-// database_item.dart
-// Gemeinsame Schnittstelle für alle Einträge der Datenbank
-// (Bands, Musiker, Alben, Songs und Genres).
-// Auf diese Weise wird nur ein File für alle Detailseiten benötigt. Enstanden durch AI prüfung auf effizient, vorher wurden eigene Seite Pro Kategorie genutzt.
-
+// Gemeinsame Schnittstelle für alle Einträge der Datenbank. Auf diese Weise wird nur ein Widget benötigt für den Seitenaufbau anstell von einem Pro Kategorie. Das hatte mich gestört beim entwickeln und ich habe per AI einen Weg gesucht das zu umgehen.
 import 'package:flutter/material.dart';
 import 'info_field.dart';
 

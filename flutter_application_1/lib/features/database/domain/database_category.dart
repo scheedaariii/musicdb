@@ -1,13 +1,4 @@
-// database_category.dart
-// Die Kategorien der Datenbank (Bands, Musiker, Alben, Songs, Genres, Rolle).
-//
-// CategoryKind ist ein "erweitertes Enum": Jeder Wert bringt seine festen
-// Angaben (Name, Icon, Beschreibungstexte) gleich selbst mit. Vorher lagen
-// diese Texte in einem 80-zeiligen switch im Repository. Der Nachteil dort:
-// Wer nur den Namen einer Kategorie brauchte, löste damit den Aufbau der
-// kompletten Kategorie samt aller Einträge aus.
-//
-// DatabaseCategory verbindet eine Kategorie mit ihren aktuellen Einträgen.
+// Die Kategorien der Datenbank (Bands, Musiker, Alben, Songs, Genres, Rolle). DatabaseCategory verbindet eine Kategorie mit ihren aktuellen Einträgen.
 
 import 'package:flutter/material.dart';
 import 'database_item.dart';
@@ -93,7 +84,6 @@ enum CategoryKind {
   final String entryLabel;   // Überschrift über der Eintragsliste
 
   // Sucht die Kategorie zu einem angezeigten Namen, z.B. für das Formular.
- 
   static CategoryKind? byTitle(String title) {
     for (final CategoryKind kind in values) {
       if (kind.title == title) return kind;
@@ -108,8 +98,6 @@ enum CategoryKind {
 }
 
 // Eine Kategorie zusammen mit ihren aktuellen Einträgen.
-// Die festen Angaben kommen von der Kategorie selbst und werden hier nur
-// durchgereicht, damit die Screens weiterhin category.title schreiben können.
 class DatabaseCategory {
   final CategoryKind kind;
   final List<DatabaseItem> entries;

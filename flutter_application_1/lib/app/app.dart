@@ -68,17 +68,11 @@ class App extends StatelessWidget {
   }
 }
 
-// ================================================================
+
 // Read: Erstes Laden der Datenbank aus Firestore
-//
-// DatabaseRepository.load() (siehe database_repository.dart) holt beim
-// Start alle Sammlungen aus Firestore. _StartupScreen wartet darauf, statt
-// dass main() das vorher übernahm - dort war während des Ladens nur der
-// leere native Splash-Screen zu sehen. Jetzt zeigt die App währenddessen
-// die eigene Ladeanzeige (_LoadingScreen) und bei einem Fehler eine
-// verständliche Fehleranzeige (_LoadErrorScreen), statt entweder zu hängen
-// oder unbemerkt mit leeren Daten weiterzulaufen.
-// ================================================================
+// Holt beim Start alle Sammlungen aus Firestore. _StartupScreen wartet darauf und zeigt einen ladescreen wen das länger dauert.
+// Fehlermeldung bei laden Fehlern. Beides konnte nur mit AI getriebenen Tests nachgewiesen werden bisher.
+
 class _StartupScreen extends StatefulWidget {
   const _StartupScreen();
 
@@ -95,10 +89,8 @@ class _StartupScreenState extends State<_StartupScreen> {
       future: _laden,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          // FutureBuilder meldet einen fehlgeschlagenen Ladevorgang auch
-          // als "done" - ohne diese Prüfung würde die App bei einem Fehler
-          // (z.B. keine Internetverbindung) einfach mit leeren Daten
-          // weiterlaufen, statt das kenntlich zu machen.
+          // FutureBuilder meldet einen fehlgeschlagenen Ladevorgang auch als "done" - ohne diese Prüfung würde die App bei einem Fehler einfach mit leeren Daten weiterlaufen, ohne Meldung.
+          // Dieses Element ist durch eine "Anmerkung" von Claude enstanden als ich das Fehlerhandling testen wollte.
           if (snapshot.hasError) {
             return const _LoadErrorScreen();
           }
@@ -137,9 +129,7 @@ class _LoadingScreen extends StatelessWidget {
   }
 }
 
-// Wird angezeigt, wenn die Datenbank nicht geladen werden konnte (z.B.
-// keine Internetverbindung). Verhindert, dass die App unbemerkt mit
-// leeren Daten weiterläuft.
+// Wird angezeigt, wenn die Datenbank nicht geladen werden konnte. Verhindert, dass die App unbemerkt mit leeren Daten weiterläuft.
 class _LoadErrorScreen extends StatelessWidget {
   const _LoadErrorScreen();
 

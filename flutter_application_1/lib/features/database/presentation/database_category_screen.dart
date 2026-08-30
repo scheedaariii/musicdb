@@ -1,8 +1,4 @@
-// database_category_screen.dart
-// Zeigt die Einträge einer ausgewählten Kategorie an
-// (Bands, Musiker, Alben, Songs, Genres oder Rolle).
-// Die Kategorie wird über den Konstruktor übergeben, der Aufbau ist für
-// alle Kategorien identisch.
+// Zeigt die Einträge einer ausgewählten Kategorie an. Die Kategorie wird über den Konstruktor übergeben, der Aufbau ist für alle Kategorien identisch.
 
 import 'package:flutter/material.dart';
 import '../data/database_repository.dart';
@@ -28,7 +24,7 @@ class DatabaseCategoryScreen extends StatefulWidget {
 }
 
 class _DatabaseCategoryScreenState extends State<DatabaseCategoryScreen> {
-  // Steuert das Suchfeld und hält den aktuellen Suchbegriff
+  // Steuert das Suchfeld und enthält den aktuellen Suchbegriff
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
 
@@ -40,7 +36,7 @@ class _DatabaseCategoryScreenState extends State<DatabaseCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Bei jedem Aufbau frisch holen, damit neue Einträge sofort erscheinen
+    // Bei jedem Aufbau neu abrufen, damit neue Einträge sofort erscheinen
     final DatabaseCategory category = repo.categoryOf(widget.kind);
 
     // Nur die Einträge anzeigen, welche zum Suchbegriff passen
@@ -135,8 +131,7 @@ class _DatabaseCategoryScreenState extends State<DatabaseCategoryScreen> {
         ),
       ),
 
-      // Derselbe Plus-Button wie auf der Übersicht.
-      // Die Kategorie ist hier fest vorgegeben und im Formular gesperrt.
+      // Derselbe Plus-Button wie auf der Übersicht. Die Kategorie ist hier fest vorgegeben und im Formular gesperrt.
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push<bool>(

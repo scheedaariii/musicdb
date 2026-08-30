@@ -1,6 +1,16 @@
 // database_repository.dart
-// Zuständig für Die Firebase verknüpfung und das management der daten.
-// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu// erfasste Einträge landen sofort in der jeweiligen Liste und werden im Hintergrund nach Firestore geschrieben.
+// Zuständig für die Firebase-Verknüpfung und das Management der Daten.
+// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu
+// erfasste Einträge landen sofort in der jeweiligen Liste und werden im
+// Hintergrund nach Firestore geschrieben.
+//
+// Verknüpfungen zwischen Einträgen (z.B. welche Bands ein Musiker hat)
+// werden ausschliesslich über IDs gespeichert (bandIds, genreIds, ...).
+// Es gibt nirgends eine zusätzlich gespeicherte Kopie eines Namens - der
+// Name wird bei Bedarf immer frisch über die passende ...ById-Methode
+// nachgeschlagen (siehe z.B. Musician.bandNames). Dadurch braucht eine
+// Umbenennung (updateBand, updateGenre, ...) auch nirgends sonst
+// nachgezogen zu werden: sie ändert nur das eine betroffene Dokument.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +39,8 @@ class DatabaseRepository {
   final List<Musician> musicians = [];
   final List<Album> albums = [];
   final List<Song> songs = [];
-
-  // Eigenständig gespeicherte Genres und Rollen (Name + Beschreibung), aus der jeweiligen Firestore-Sammlung geladen. 
-  // Die Bandzugehörigkeit bzw. Musiker-Zugehörigkeit wird davon getrennt aus bands/musicians abgeleitet.
-  final List<Genre> _storedGenres = [];
-  final List<Role> _storedRoles = [];
+  final List<Genre> genres = [];
+  final List<Role> roles = [];
 
   bool _loaded = false;
 
@@ -64,12 +71,12 @@ class DatabaseRepository {
 
     final QuerySnapshot<Map<String, dynamic>> genresSnapshot =
         await _db.collection('genres').get();
-    _storedGenres.addAll(
+    genres.addAll(
         genresSnapshot.docs.map((doc) => Genre.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> rolesSnapshot =
         await _db.collection('roles').get();
-    _storedRoles.addAll(
+    roles.addAll(
         rolesSnapshot.docs.map((doc) => Role.fromMap(doc.id, doc.data())));
 
     _loaded = true;
@@ -93,97 +100,8 @@ class DatabaseRepository {
     });
   }
 
-  // ---------- Abgeleitete Listen ----------
+  // ---------- Namen für die Auswahl-Listen im Formular ----------
 
-  // Genres ergeben sich aus den Bands, ergänzt um eigenständig erfasste Genres. Die Beschreibung kommt, falls vorhanden, aus _storedGenres.
-  List<Genre> get genres {
-    final Map<String, List<String>> bandsProGenre = {};
-
-    for (final Band band in bands) {
-      for (final String name in band.genres) {
-        bandsProGenre.putIfAbsent(name, () => []).add(band.id);
-      }
-    }
-    for (final Genre gespeichert in _storedGenres) {
-      bandsProGenre.putIfAbsent(gespeichert.title, () => []);
-    }
-
-    final List<String> namen = bandsProGenre.keys.toList()..sort();
-
-    return [
-      for (final String name in namen)
-        Genre(
-          id: _genreId(name),
-          title: name,
-          descriptionText: _genreDescription(name),
-          bandCount: bandsProGenre[name]!.length,
-          bandIds: bandsProGenre[name]!,
-        ),
-    ];
-  }
-
-  // Rollen ergeben sich aus den Musikern, ergänzt um eigenständig erfasste
-  // Rollen. Die Beschreibung kommt, falls vorhanden, aus _storedRoles.
-  List<Role> get roles {
-    final Map<String, List<String>> musikerProRolle = {};
-
-    for (final Musician musician in musicians) {
-      for (final String name in musician.roles) {
-        musikerProRolle.putIfAbsent(name, () => []).add(musician.id);
-      }
-    }
-    for (final Role gespeichert in _storedRoles) {
-      musikerProRolle.putIfAbsent(gespeichert.title, () => []);
-    }
-
-    final List<String> namen = musikerProRolle.keys.toList()..sort();
-
-    return [
-      for (final String name in namen)
-        Role(
-          id: _roleId(name),
-          title: name,
-          descriptionText: _roleDescription(name),
-          musicianIds: musikerProRolle[name]!,
-        ),
-    ];
-  }
-
-  // Sucht die hinterlegte Beschreibung zu einem Namen. Ohne Treffer bleibt
-  // sie leer, dann greift der automatisch gebildete Text im jeweiligen Modell.
-  String _genreDescription(String title) {
-    for (final Genre eintrag in _storedGenres) {
-      if (eintrag.title == title) return eintrag.descriptionText;
-    }
-    return '';
-  }
-
-  String _roleDescription(String title) {
-    for (final Role eintrag in _storedRoles) {
-      if (eintrag.title == title) return eintrag.descriptionText;
-    }
-    return '';
-  }
-
-  // Die ID eines gespeicherten Dokuments bleibt fest, auch wenn der Name
-  // sich später ändert (renameGenre/renameRole). Ohne diese Zuordnung würde
-  // die angezeigte ID bei jeder Umbenennung neu aus dem Namen gebildet und
-  // nicht mehr zum tatsächlichen Firestore-Dokument passen.
-  String _genreId(String title) {
-    for (final Genre eintrag in _storedGenres) {
-      if (eintrag.title == title) return eintrag.id;
-    }
-    return _slug(title);
-  }
-
-  String _roleId(String title) {
-    for (final Role eintrag in _storedRoles) {
-      if (eintrag.title == title) return eintrag.id;
-    }
-    return _slug(title);
-  }
-
-  // Namen für die Auswahl-Listen im Formular
   List<String> get genreNames => genres.map((g) => g.title).toList();
   List<String> get roleNames => roles.map((r) => r.title).toList();
   List<String> get bandNames => bands.map((b) => b.title).toList();
@@ -216,7 +134,7 @@ class DatabaseRepository {
   List<DatabaseCategory> get categories =>
       CategoryKind.values.map(categoryOf).toList();
 
-  // ---------- Verknüpfungen ----------
+  // ---------- Verknüpfungen: Suche per ID ----------
 
   Band? bandById(String id) {
     for (final Band band in bands) {
@@ -246,8 +164,24 @@ class DatabaseRepository {
     return null;
   }
 
-  // Sucht per Titel statt ID. Wird gebraucht, wenn eine Detailseite eine
-  // Verknüpfung aus einem Auswahlfeld (Namen) in einen Eintrag auflöst.
+  Genre? genreById(String id) {
+    for (final Genre genre in genres) {
+      if (genre.id == id) return genre;
+    }
+    return null;
+  }
+
+  Role? roleById(String id) {
+    for (final Role role in roles) {
+      if (role.id == id) return role;
+    }
+    return null;
+  }
+
+  // ---------- Verknüpfungen: Suche per Titel ----------
+  // Wird gebraucht, wenn eine Detailseite eine Verknüpfung aus einem
+  // Auswahlfeld (Namen) in einen Eintrag auflöst.
+
   Band? bandByTitle(String title) {
     for (final Band band in bands) {
       if (band.title == title) return band;
@@ -276,6 +210,20 @@ class DatabaseRepository {
     return null;
   }
 
+  Genre? genreByTitle(String title) {
+    for (final Genre genre in genres) {
+      if (genre.title == title) return genre;
+    }
+    return null;
+  }
+
+  Role? roleByTitle(String title) {
+    for (final Role role in roles) {
+      if (role.title == title) return role;
+    }
+    return null;
+  }
+
   // Liefert die verknüpften Einträge zu einem Eintrag
   List<RelatedSection> relatedFor(DatabaseItem item) {
     final List<RelatedSection> sections = [];
@@ -297,49 +245,54 @@ class DatabaseRepository {
       return sections;
     }
 
-    // Album: seine Bands und die Songs des Albums
+    // Album: beteiligte Bands und die Songs des Albums
     if (item is Album) {
       final List<Band> gefundeneBands = _bandsByIds(item.bandIds);
 
-      _addSection(sections, _label(gefundeneBands.length, 'Band', 'Bands'),
+      _addSection(
+          sections,
+          gefundeneBands.length == 1 ? 'Band' : 'Bands',
           gefundeneBands);
       _addSection(
           sections, 'Songs', songs.where((s) => s.albumIds.contains(item.id)));
       return sections;
     }
 
-    // Song: seine Bands und seine Alben, beide Verknüpfungen werden gezeigt
+    // Song: Beteiligte Bands und zugehörige Alben
     if (item is Song) {
       final List<Band> gefundeneBands = _bandsByIds(item.bandIds);
       final List<Album> gefundeneAlben =
           albums.where((a) => item.albumIds.contains(a.id)).toList();
 
-      _addSection(sections, _label(gefundeneBands.length, 'Band', 'Bands'),
+      _addSection(
+          sections,
+          gefundeneBands.length == 1 ? 'Band' : 'Bands',
           gefundeneBands);
-      _addSection(sections, _label(gefundeneAlben.length, 'Album', 'Alben'),
+      _addSection(
+          sections,
+          gefundeneAlben.length == 1 ? 'Album' : 'Alben',
           gefundeneAlben);
       return sections;
     }
 
     // Genre: alle Bands mit diesem Genre
     if (item is Genre) {
-      _addSection(
-          sections, 'Bands mit diesem Genre', _bandsByIds(item.bandIds));
+      _addSection(sections, 'Bands mit diesem Genre',
+          bands.where((b) => b.genreIds.contains(item.id)));
       return sections;
     }
 
     // Rolle: alle Musiker mit dieser Rolle
     if (item is Role) {
       _addSection(sections, 'Musiker mit dieser Rolle',
-          _musiciansByIds(item.musicianIds));
+          musicians.where((m) => m.roleIds.contains(item.id)));
       return sections;
     }
 
     return sections;
   }
 
-  // Hängt einen Abschnitt an, aber nur wenn es überhaupt Einträge gibt.
-  // Das ersetzt das mehrfach wiederholte "if (... isNotEmpty) sections.add(...)".
+ // Hängt einen Abschnitt an, aber nur wenn es überhaupt Einträge gibt. Wurde mit AI ergänzt, ich konnte selbst keine passende Lösung finden.
   void _addSection(
     List<RelatedSection> sections,
     String label,
@@ -351,13 +304,7 @@ class DatabaseRepository {
     sections.add(RelatedSection(label: label, items: gefunden));
   }
 
-  // Beschriftung im Singular oder Plural, z.B. "Band" oder "Bands"
-  String _label(int anzahl, String eins, String mehrere) =>
-      anzahl == 1 ? eins : mehrere;
-
   // Sucht zu jeder ID die Band. IDs ohne Treffer werden übersprungen.
-  // Wichtig: bandById wird pro ID nur ein Mal aufgerufen. Vorher stand der
-  // Aufruf zwei Mal da (einmal in der Prüfung, einmal für den Wert).
   List<Band> _bandsByIds(List<String> ids) {
     final List<Band> gefunden = [];
     for (final String id in ids) {
@@ -367,17 +314,8 @@ class DatabaseRepository {
     return gefunden;
   }
 
-  List<Musician> _musiciansByIds(List<String> ids) {
-    final List<Musician> gefunden = [];
-    for (final String id in ids) {
-      final Musician? musician = musicianById(id);
-      if (musician != null) gefunden.add(musician);
-    }
-    return gefunden;
-  }
+  // Wandelt im Formular ausgewählte Namen in IDs um. Namen ohne Treffer werden übersprungen (vermeidet fehler)
 
-  // Wandelt im Formular ausgewählte Namen in IDs um.
-  // Namen ohne Treffer werden übersprungen, statt die App abstürzen zu lassen.
   List<String> idsForBandNames(List<String> namen) => [
         for (final String name in namen)
           for (final Band band in bands)
@@ -390,30 +328,127 @@ class DatabaseRepository {
             if (album.title == name) album.id,
       ];
 
+  List<String> idsForGenreNames(List<String> namen) => [
+        for (final String name in namen)
+          for (final Genre genre in genres)
+            if (genre.title == name) genre.id,
+      ];
+
+  List<String> idsForRoleNames(List<String> namen) => [
+        for (final String name in namen)
+          for (final Role role in roles)
+            if (role.title == name) role.id,
+      ];
+
   // ---------- Neue Einträge speichern ----------
 
-  void addBand(Band band) {
+  void addBand({
+    required String title,
+    List<String> genreIds = const [],
+    String founded = '',
+    String origin = '',
+    String descriptionText = '',
+  }) {
+    final doc = _db.collection('bands').doc();
+    final Band band = Band(
+      id: doc.id,
+      title: title,
+      genreIds: genreIds,
+      founded: founded,
+      origin: origin,
+      descriptionText: descriptionText,
+    );
     bands.add(band);
-    _write(() => _db.collection('bands').doc(band.id).set(band.toMap()));
+    _write(() => doc.set(band.toMap()));
   }
 
-  void addMusician(Musician musician) {
+  void addMusician({
+    required String firstName,
+    required String lastName,
+    String dateOfBirth = '',
+    List<String> bandIds = const [],
+    List<String> roleIds = const [],
+    String descriptionText = '',
+  }) {
+    final doc = _db.collection('musicians').doc();
+    final Musician musician = Musician(
+      id: doc.id,
+      firstName: firstName,
+      lastName: lastName,
+      dateOfBirth: dateOfBirth,
+      bandIds: bandIds,
+      roleIds: roleIds,
+      descriptionText: descriptionText,
+    );
     musicians.add(musician);
-    _write(() =>
-        _db.collection('musicians').doc(musician.id).set(musician.toMap()));
+    _write(() => doc.set(musician.toMap()));
   }
 
-  void addAlbum(Album album) {
+  void addAlbum({
+    required String title,
+    List<String> bandIds = const [],
+    List<String> genreIds = const [],
+    String releaseDate = '',
+    String descriptionText = '',
+  }) {
+    final doc = _db.collection('albums').doc();
+    final Album album = Album(
+      id: doc.id,
+      title: title,
+      bandIds: bandIds,
+      genreIds: genreIds,
+      releaseDate: releaseDate,
+      descriptionText: descriptionText,
+    );
     albums.add(album);
-    _write(() => _db.collection('albums').doc(album.id).set(album.toMap()));
+    _write(() => doc.set(album.toMap()));
   }
 
-  void addSong(Song song) {
+  void addSong({
+    required String title,
+    int durationSeconds = 0,
+    List<String> albumIds = const [],
+    List<String> bandIds = const [],
+    String releaseDate = '',
+    String descriptionText = '',
+  }) {
+    final doc = _db.collection('songs').doc();
+    final Song song = Song(
+      id: doc.id,
+      title: title,
+      durationSeconds: durationSeconds,
+      albumIds: albumIds,
+      bandIds: bandIds,
+      releaseDate: releaseDate,
+      descriptionText: descriptionText,
+    );
     songs.add(song);
-    _write(() => _db.collection('songs').doc(song.id).set(song.toMap()));
+    _write(() => doc.set(song.toMap()));
   }
 
-  // ---------- Bestehende Einträge ändern ----------
+  void addGenre({required String title, String descriptionText = ''}) {
+    final doc = _db.collection('genres').doc();
+    final Genre genre = Genre(
+      id: doc.id,
+      title: title,
+      descriptionText: descriptionText,
+    );
+    genres.add(genre);
+    _write(() => doc.set(genre.toMap()));
+  }
+
+  void addRole({required String title, String descriptionText = ''}) {
+    final doc = _db.collection('roles').doc();
+    final Role role = Role(
+      id: doc.id,
+      title: title,
+      descriptionText: descriptionText,
+    );
+    roles.add(role);
+    _write(() => doc.set(role.toMap()));
+  }
+
+ // ---------- Bestehende Einträge ändern ----------
 
   void updateBand(Band band) {
     final int index = bands.indexWhere((b) => b.id == band.id);
@@ -444,284 +479,89 @@ class DatabaseRepository {
     _write(() => _db.collection('songs').doc(song.id).set(song.toMap()));
   }
 
-  void updateGenreDescription(String genreId, String description) {
-    final int index = _storedGenres.indexWhere((g) => g.id == genreId);
+  void updateGenre(Genre genre) {
+    final int index = genres.indexWhere((g) => g.id == genre.id);
     if (index == -1) return;
-
-    final Genre aktualisiert = Genre(
-      id: _storedGenres[index].id,
-      title: _storedGenres[index].title,
-      descriptionText: description,
-      bandCount: _storedGenres[index].bandCount,
-      bandIds: _storedGenres[index].bandIds,
-    );
-    _storedGenres[index] = aktualisiert;
-    _write(() => _db
-        .collection('genres')
-        .doc(aktualisiert.id)
-        .set(aktualisiert.toMap()));
+    genres[index] = genre;
+    _write(() => _db.collection('genres').doc(genre.id).set(genre.toMap()));
   }
 
-  void updateRoleDescription(String roleId, String description) {
-    final int index = _storedRoles.indexWhere((r) => r.id == roleId);
+  void updateRole(Role role) {
+    final int index = roles.indexWhere((r) => r.id == role.id);
     if (index == -1) return;
-
-    final Role aktualisiert = Role(
-      id: _storedRoles[index].id,
-      title: _storedRoles[index].title,
-      descriptionText: description,
-      musicianIds: _storedRoles[index].musicianIds,
-    );
-    _storedRoles[index] = aktualisiert;
-    _write(() => _db
-        .collection('roles')
-        .doc(aktualisiert.id)
-        .set(aktualisiert.toMap()));
+    roles[index] = role;
+    _write(() => _db.collection('roles').doc(role.id).set(role.toMap()));
   }
 
-  // ---------- Namen umbenennen ----------
-  // Der Name eines Bands/Albums wird bei jedem anderen Eintrag, der darauf
-  // verweist, zusätzlich als Text mitgespeichert (z.B. Musician.bandNames).
-  // Diese Methoden ziehen eine Umbenennung dort nach. Sie ändern nur die
-  // Kopien bei den anderen Einträgen - der Eintrag selbst wird bereits über
-  // updateBand/updateAlbum mit dem neuen Namen gespeichert.
-  // Für Musiker und Songs gibt es keine solche Kopie irgendwo, ihr Name
-  // lässt sich daher direkt über updateMusician/updateSong ändern.
+// ---------- Verknüpfungen auf beiden Seiten ändern ----------
+  // Eine Detailseite kann eine Verknüpfung zeigen, die als Feld beim jeweils anderen Eintrag gespeichert ist (z.B. zeigt eine Band ihre Songs, aber die Verknüpfung liegt in Song.bandIds). Ich hatte bei Tests diese inkonsistenz entdeckt. Um das sauber umzusetzten musste ich AI zur Hilfe nehmen.
 
-  void cascadeBandRename(String bandId, String newTitle) {
-    for (final Musician musician in [...musicians]) {
-      final int index = musician.bandIds.indexOf(bandId);
-      if (index == -1) continue;
-      final List<String> bandNames = [...musician.bandNames];
-      bandNames[index] = newTitle;
-      updateMusician(Musician(
-        id: musician.id,
-        firstName: musician.firstName,
-        lastName: musician.lastName,
-        dateOfBirth: musician.dateOfBirth,
-        descriptionText: musician.descriptionText,
-        bandIds: musician.bandIds,
-        bandNames: bandNames,
-        roles: musician.roles,
-      ));
-    }
-    for (final Album album in [...albums]) {
-      final int index = album.bandIds.indexOf(bandId);
-      if (index == -1) continue;
-      final List<String> bandNames = [...album.bandNames];
-      bandNames[index] = newTitle;
-      updateAlbum(Album(
-        id: album.id,
-        title: album.title,
-        bandIds: album.bandIds,
-        bandNames: bandNames,
-        genres: album.genres,
-        releaseDate: album.releaseDate,
-        descriptionText: album.descriptionText,
-      ));
-    }
-    for (final Song song in [...songs]) {
-      final int index = song.bandIds.indexOf(bandId);
-      if (index == -1) continue;
-      final List<String> bandNames = [...song.bandNames];
-      bandNames[index] = newTitle;
-      updateSong(Song(
-        id: song.id,
-        title: song.title,
-        durationSeconds: song.durationSeconds,
-        albumIds: song.albumIds,
-        albumNames: song.albumNames,
-        bandIds: song.bandIds,
-        bandNames: bandNames,
-        releaseDate: song.releaseDate,
-        descriptionText: song.descriptionText,
-      ));
-    }
-  }
-
-  void cascadeAlbumRename(String albumId, String newTitle) {
-    for (final Song song in [...songs]) {
-      final int index = song.albumIds.indexOf(albumId);
-      if (index == -1) continue;
-      final List<String> albumNames = [...song.albumNames];
-      albumNames[index] = newTitle;
-      updateSong(Song(
-        id: song.id,
-        title: song.title,
-        durationSeconds: song.durationSeconds,
-        albumIds: song.albumIds,
-        albumNames: albumNames,
-        bandIds: song.bandIds,
-        bandNames: song.bandNames,
-        releaseDate: song.releaseDate,
-        descriptionText: song.descriptionText,
-      ));
-    }
-  }
-
-  // Genre und Rolle sind bei Bands/Musikern nicht per ID verknüpft, sondern
-  // rein über den Namen (z.B. Band.genres). Eine Umbenennung ersetzt daher
-  // den Text bei jedem Band bzw. Musiker, der den alten Namen enthält, und
-  // aktualisiert danach das eigene Dokument. Gab es noch keins (ein Genre
-  // kann rein abgeleitet existieren, ohne eigene Beschreibung), wird jetzt
-  // eins angelegt - sonst würde die ID beim nächsten Umbenennen wieder neu
-  // aus dem (dann alten) Namen gebildet.
-  void renameGenre(String genreId, String oldTitle, String newTitle) {
-    if (oldTitle == newTitle) return;
-
-    for (final Band band in [...bands]) {
-      if (!band.genres.contains(oldTitle)) continue;
-      updateBand(Band(
-        id: band.id,
-        title: band.title,
-        origin: band.origin,
-        founded: band.founded,
-        descriptionText: band.descriptionText,
-        genres: [
-          for (final String genre in band.genres)
-            genre == oldTitle ? newTitle : genre,
-        ],
-      ));
-    }
-
-    final int index = _storedGenres.indexWhere((g) => g.id == genreId);
-    final Genre aktualisiert = Genre(
-      id: genreId,
-      title: newTitle,
-      descriptionText:
-          index == -1 ? '' : _storedGenres[index].descriptionText,
-      bandCount: index == -1 ? 0 : _storedGenres[index].bandCount,
-      bandIds: index == -1 ? const [] : _storedGenres[index].bandIds,
-    );
-    if (index == -1) {
-      _storedGenres.add(aktualisiert);
-    } else {
-      _storedGenres[index] = aktualisiert;
-    }
-    _write(() =>
-        _db.collection('genres').doc(genreId).set(aktualisiert.toMap()));
-  }
-
-  void renameRole(String roleId, String oldTitle, String newTitle) {
-    if (oldTitle == newTitle) return;
-
-    for (final Musician musician in [...musicians]) {
-      if (!musician.roles.contains(oldTitle)) continue;
-      updateMusician(Musician(
-        id: musician.id,
-        firstName: musician.firstName,
-        lastName: musician.lastName,
-        dateOfBirth: musician.dateOfBirth,
-        descriptionText: musician.descriptionText,
-        bandIds: musician.bandIds,
-        bandNames: musician.bandNames,
-        roles: [
-          for (final String rolle in musician.roles)
-            rolle == oldTitle ? newTitle : rolle,
-        ],
-      ));
-    }
-
-    final int index = _storedRoles.indexWhere((r) => r.id == roleId);
-    final Role aktualisiert = Role(
-      id: roleId,
-      title: newTitle,
-      descriptionText: index == -1 ? '' : _storedRoles[index].descriptionText,
-      musicianIds: index == -1 ? const [] : _storedRoles[index].musicianIds,
-    );
-    if (index == -1) {
-      _storedRoles.add(aktualisiert);
-    } else {
-      _storedRoles[index] = aktualisiert;
-    }
-    _write(() =>
-        _db.collection('roles').doc(roleId).set(aktualisiert.toMap()));
-  }
-
-  // ---------- Verknüpfungen von der Gegenseite ändern ----------
-  // Eine Detailseite kann eine Verknüpfung zeigen, die als Feld beim
-  // jeweils anderen Eintrag gespeichert ist (z.B. zeigt eine Band ihre
-  // Songs, aber die Verknüpfung liegt in Song.bandIds). Diese Methoden
-  // ändern in so einem Fall den anderen Eintrag.
 
   void addBandToMusician(String musicianId, String bandId) {
     final Musician? musician = musicianById(musicianId);
-    final Band? band = bandById(bandId);
-    if (musician == null || band == null) return;
+    if (musician == null) return;
     if (musician.bandIds.contains(bandId)) return;
 
     updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
+      dateOfBirth: musician.dateOfBirth,
       descriptionText: musician.descriptionText,
-      roles: musician.roles,
+      roleIds: musician.roleIds,
       bandIds: [...musician.bandIds, bandId],
-      bandNames: [...musician.bandNames, band.title],
     ));
   }
 
   void removeBandFromMusician(String musicianId, String bandId) {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
-    final int index = musician.bandIds.indexOf(bandId);
-    if (index == -1) return;
-
-    final List<String> bandIds = [...musician.bandIds]..removeAt(index);
-    final List<String> bandNames = [...musician.bandNames]..removeAt(index);
+    if (!musician.bandIds.contains(bandId)) return;
 
     updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
+      dateOfBirth: musician.dateOfBirth,
       descriptionText: musician.descriptionText,
-      roles: musician.roles,
-      bandIds: bandIds,
-      bandNames: bandNames,
+      roleIds: musician.roleIds,
+      bandIds: musician.bandIds.where((id) => id != bandId).toList(),
     ));
   }
 
   void addBandToAlbum(String albumId, String bandId) {
     final Album? album = albumById(albumId);
-    final Band? band = bandById(bandId);
-    if (album == null || band == null) return;
+    if (album == null) return;
     if (album.bandIds.contains(bandId)) return;
 
     updateAlbum(Album(
       id: album.id,
       title: album.title,
-      genres: album.genres,
+      genreIds: album.genreIds,
       releaseDate: album.releaseDate,
       descriptionText: album.descriptionText,
       bandIds: [...album.bandIds, bandId],
-      bandNames: [...album.bandNames, band.title],
     ));
   }
 
   void removeBandFromAlbum(String albumId, String bandId) {
     final Album? album = albumById(albumId);
     if (album == null) return;
-    final int index = album.bandIds.indexOf(bandId);
-    if (index == -1) return;
-
-    final List<String> bandIds = [...album.bandIds]..removeAt(index);
-    final List<String> bandNames = [...album.bandNames]..removeAt(index);
+    if (!album.bandIds.contains(bandId)) return;
 
     updateAlbum(Album(
       id: album.id,
       title: album.title,
-      genres: album.genres,
+      genreIds: album.genreIds,
       releaseDate: album.releaseDate,
       descriptionText: album.descriptionText,
-      bandIds: bandIds,
-      bandNames: bandNames,
+      bandIds: album.bandIds.where((id) => id != bandId).toList(),
     ));
   }
 
   void addBandToSong(String songId, String bandId) {
     final Song? song = songById(songId);
-    final Band? band = bandById(bandId);
-    if (song == null || band == null) return;
+    if (song == null) return;
     if (song.bandIds.contains(bandId)) return;
 
     updateSong(Song(
@@ -731,20 +571,14 @@ class DatabaseRepository {
       releaseDate: song.releaseDate,
       descriptionText: song.descriptionText,
       albumIds: song.albumIds,
-      albumNames: song.albumNames,
       bandIds: [...song.bandIds, bandId],
-      bandNames: [...song.bandNames, band.title],
     ));
   }
 
   void removeBandFromSong(String songId, String bandId) {
     final Song? song = songById(songId);
     if (song == null) return;
-    final int index = song.bandIds.indexOf(bandId);
-    if (index == -1) return;
-
-    final List<String> bandIds = [...song.bandIds]..removeAt(index);
-    final List<String> bandNames = [...song.bandNames]..removeAt(index);
+    if (!song.bandIds.contains(bandId)) return;
 
     updateSong(Song(
       id: song.id,
@@ -753,16 +587,13 @@ class DatabaseRepository {
       releaseDate: song.releaseDate,
       descriptionText: song.descriptionText,
       albumIds: song.albumIds,
-      albumNames: song.albumNames,
-      bandIds: bandIds,
-      bandNames: bandNames,
+      bandIds: song.bandIds.where((id) => id != bandId).toList(),
     ));
   }
 
   void addAlbumToSong(String songId, String albumId) {
     final Song? song = songById(songId);
-    final Album? album = albumById(albumId);
-    if (song == null || album == null) return;
+    if (song == null) return;
     if (song.albumIds.contains(albumId)) return;
 
     updateSong(Song(
@@ -772,20 +603,14 @@ class DatabaseRepository {
       releaseDate: song.releaseDate,
       descriptionText: song.descriptionText,
       bandIds: song.bandIds,
-      bandNames: song.bandNames,
       albumIds: [...song.albumIds, albumId],
-      albumNames: [...song.albumNames, album.title],
     ));
   }
 
   void removeAlbumFromSong(String songId, String albumId) {
     final Song? song = songById(songId);
     if (song == null) return;
-    final int index = song.albumIds.indexOf(albumId);
-    if (index == -1) return;
-
-    final List<String> albumIds = [...song.albumIds]..removeAt(index);
-    final List<String> albumNames = [...song.albumNames]..removeAt(index);
+    if (!song.albumIds.contains(albumId)) return;
 
     updateSong(Song(
       id: song.id,
@@ -794,16 +619,14 @@ class DatabaseRepository {
       releaseDate: song.releaseDate,
       descriptionText: song.descriptionText,
       bandIds: song.bandIds,
-      bandNames: song.bandNames,
-      albumIds: albumIds,
-      albumNames: albumNames,
+      albumIds: song.albumIds.where((id) => id != albumId).toList(),
     ));
   }
 
-  void addGenreToBand(String bandId, String genreName) {
+  void addGenreToBand(String bandId, String genreId) {
     final Band? band = bandById(bandId);
     if (band == null) return;
-    if (band.genres.contains(genreName)) return;
+    if (band.genreIds.contains(genreId)) return;
 
     updateBand(Band(
       id: band.id,
@@ -811,14 +634,14 @@ class DatabaseRepository {
       origin: band.origin,
       founded: band.founded,
       descriptionText: band.descriptionText,
-      genres: [...band.genres, genreName],
+      genreIds: [...band.genreIds, genreId],
     ));
   }
 
-  void removeGenreFromBand(String bandId, String genreName) {
+  void removeGenreFromBand(String bandId, String genreId) {
     final Band? band = bandById(bandId);
     if (band == null) return;
-    if (!band.genres.contains(genreName)) return;
+    if (!band.genreIds.contains(genreId)) return;
 
     updateBand(Band(
       id: band.id,
@@ -826,77 +649,44 @@ class DatabaseRepository {
       origin: band.origin,
       founded: band.founded,
       descriptionText: band.descriptionText,
-      genres: band.genres.where((g) => g != genreName).toList(),
+      genreIds: band.genreIds.where((id) => id != genreId).toList(),
     ));
   }
 
-  void addRoleToMusician(String musicianId, String roleName) {
+  void addRoleToMusician(String musicianId, String roleId) {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
-    if (musician.roles.contains(roleName)) return;
+    if (musician.roleIds.contains(roleId)) return;
 
     updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
+      dateOfBirth: musician.dateOfBirth,
       descriptionText: musician.descriptionText,
       bandIds: musician.bandIds,
-      bandNames: musician.bandNames,
-      roles: [...musician.roles, roleName],
+      roleIds: [...musician.roleIds, roleId],
     ));
   }
 
-  void removeRoleFromMusician(String musicianId, String roleName) {
+  void removeRoleFromMusician(String musicianId, String roleId) {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
-    if (!musician.roles.contains(roleName)) return;
+    if (!musician.roleIds.contains(roleId)) return;
 
     updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
+      dateOfBirth: musician.dateOfBirth,
       descriptionText: musician.descriptionText,
       bandIds: musician.bandIds,
-      bandNames: musician.bandNames,
-      roles: musician.roles.where((r) => r != roleName).toList(),
+      roleIds: musician.roleIds.where((id) => id != roleId).toList(),
     ));
-  }
-
-  void addGenre(String name, {String description = ''}) {
-    if (genreNames.contains(name)) return;
-
-    final Genre eintrag = Genre(
-      id: _slug(name),
-      title: name,
-      descriptionText: description,
-      bandCount: 0,
-      bandIds: const [],
-    );
-    _storedGenres.add(eintrag);
-    _write(() =>
-        _db.collection('genres').doc(eintrag.id).set(eintrag.toMap()));
-  }
-
-  void addRole(String name, {String description = ''}) {
-    if (roleNames.contains(name)) return;
-
-    final Role eintrag = Role(
-      id: _slug(name),
-      title: name,
-      descriptionText: description,
-      musicianIds: const [],
-    );
-    _storedRoles.add(eintrag);
-    _write(
-        () => _db.collection('roles').doc(eintrag.id).set(eintrag.toMap()));
   }
 
   // ---------- Einträge löschen ----------
-  // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen
-  // er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band
-  // bei jedem ihrer Musiker, Alben und Songs). Dafür werden dieselben
-  // Methoden wiederverwendet, die auch beim Bearbeiten eine Verknüpfung
-  // entfernen.
+  // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band bei jedem ihrer Musiker, Alben und Songs). 
 
   void deleteBand(String id) {
     for (final Musician musician in [...musicians]) {
@@ -934,56 +724,26 @@ class DatabaseRepository {
     _write(() => _db.collection('songs').doc(id).delete());
   }
 
-  // Genre und Rolle sind bei Bands/Musikern per Name verknüpft, nicht per
-  // ID, daher wird hier zusätzlich der Titel gebraucht.
-  void deleteGenre(String id, String title) {
+  void deleteGenre(String id) {
     for (final Band band in [...bands]) {
-      if (band.genres.contains(title)) removeGenreFromBand(band.id, title);
+      if (band.genreIds.contains(id)) removeGenreFromBand(band.id, id);
     }
 
-    _storedGenres.removeWhere((g) => g.id == id);
+    genres.removeWhere((g) => g.id == id);
     _write(() => _db.collection('genres').doc(id).delete());
   }
 
-  void deleteRole(String id, String title) {
+  void deleteRole(String id) {
     for (final Musician musician in [...musicians]) {
-      if (musician.roles.contains(title)) {
-        removeRoleFromMusician(musician.id, title);
+      if (musician.roleIds.contains(id)) {
+        removeRoleFromMusician(musician.id, id);
       }
     }
 
-    _storedRoles.removeWhere((r) => r.id == id);
+    roles.removeWhere((r) => r.id == id);
     _write(() => _db.collection('roles').doc(id).delete());
   }
-
-  // IDs für neue Einträge, mit Zähler gegen Doppelvergabe
-  String newId(String name, List<String> vorhandeneIds) {
-    final String basis = _slug(name);
-    if (basis.isEmpty) return 'eintrag-${vorhandeneIds.length + 1}';
-
-    String kandidat = basis;
-    int zaehler = 2;
-    while (vorhandeneIds.contains(kandidat)) {
-      kandidat = '$basis-$zaehler';
-      zaehler++;
-    }
-    return kandidat;
-  }
 }
 
-// Wandelt einen Namen in eine ID um, z.B. "Pink Floyd" -> "pink-floyd"
-String _slug(String text) {
-  final String ersetzt = text
-      .toLowerCase()
-      .replaceAll('ä', 'ae')
-      .replaceAll('ö', 'oe')
-      .replaceAll('ü', 'ue')
-      .replaceAll('ß', 'ss');
-
-  final String nurErlaubte = ersetzt.replaceAll(RegExp(r'[^a-z0-9]+'), '-');
-
-  return nurErlaubte.replaceAll(RegExp(r'^-+|-+$'), '');
-}
-
-// Kurzer Zugriff für die Screens
+// Ein Tipp von einem Kollegen der Flutter beruflich nutzt. Antelle von DatabaseRepository.instance kan einfach nur der Term repo verwendet werden. Vereinfacht das Arbeiten im Code.
 final DatabaseRepository repo = DatabaseRepository.instance;

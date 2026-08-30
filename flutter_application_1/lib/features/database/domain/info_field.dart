@@ -1,6 +1,4 @@
-// Ein einzelnes Info-Feld auf einer Detailseite (die weissen Boxen).
-// Jedes Modell liefert seine eigenen Felder, die Detailseite muss dadurch
-// nicht wissen, um welche Art von Eintrag es sich handelt.
+// Ein einzelnes Info-Feld auf einer Detailseite (die weissen Boxen). Jedes Modell liefert seine eigenen Felder, die Detailseite muss dadurch nicht wissen, um welche Art von Eintrag es sich handelt.
 
 import 'package:flutter/material.dart';
 

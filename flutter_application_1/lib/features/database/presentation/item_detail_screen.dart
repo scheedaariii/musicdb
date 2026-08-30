@@ -4,12 +4,13 @@
 // Album, Song, Genre und Rolle liefern über die Schnittstelle DatabaseItem
 // ihre eigenen Felder, dieser Screen stellt sie einheitlich dar.
 //
-// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus. Auch
-// der Name/Titel ist editierbar. Da er bei jedem anderen Eintrag, der
-// darauf verweist, als Text mitgespeichert ist (z.B. Musician.bandNames),
-// zieht das Speichern eine Umbenennung dort nach (siehe
-// DatabaseRepository.cascadeBandRename/cascadeAlbumRename/renameGenre/
-// renameRole). Sobald etwas geändert wurde, erscheint der Speichern-Button.
+// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus, auch
+// der Name/Titel ist editierbar. Verknüpfungen sind überall nur über IDs
+// gespeichert (siehe die Modelle in domain/), nirgends liegt eine Kopie
+// eines Namens - eine Umbenennung ändert daher immer nur das eine
+// betroffene Dokument, ohne dass an anderer Stelle etwas nachgezogen
+// werden müsste. Sobald etwas geändert wurde, erscheint der Speichern-
+// Button.
 //
 // Verknüpfungen, die auf der Detailseite nur als Liste erscheinen (z.B.
 // die Songs einer Band), werden nicht bei der Band selbst gespeichert,
@@ -49,62 +50,46 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   bool _editing = false;
   bool _dirty = false;
 
-  // Während _startEditing() die Felder mit den Ausgangswerten befüllt,
-  // sollen die Listener nicht schon "geändert" melden.
   bool _populating = false;
 
-  // Der aktuelle Stand des Eintrags. Wird nach dem Speichern neu aus dem
-  // Repository geholt, damit die Seite sofort den neuen Stand zeigt.
+  // Der aktuelle Stand des Eintrags. Wird nach dem Speichern neu aus dem Repository geholt, damit die Seite sofort den neuen Stand zeigt.
   late DatabaseItem _item = widget.item;
 
-  // ---------- Eingabefelder für den Bearbeitungsmodus ----------
+  // Eingabefelder für den Bearbeitungsmodus
   // Name/Titel: bei Band, Album, Song, Genre und Rolle
   final TextEditingController _titleField = TextEditingController();
-  // Vor- und Nachname: nur bei Musikern statt _titleField
+  // Vor- und Nachname: nur bei Musikern 
   final TextEditingController _firstName = TextEditingController();
   final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
   final TextEditingController _origin = TextEditingController();
   final TextEditingController _durationSeconds = TextEditingController();
   final TextEditingController _description = TextEditingController();
-  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht (Release
-  // Datum bei Alben/Songs, Geburtsdatum bei Musikern)
+  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht 
   String _dateValue = '';
 
-  // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert)
+  // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert). 
   final List<String> _genreSelection = [];
   final List<String> _bandSelection = [];
   final List<String> _roleSelection = [];
   final List<String> _albumSelection = [];
 
-  // Verknüpfungen, die eigentlich beim jeweils anderen Eintrag gespeichert
-  // sind (z.B. die Musiker einer Band liegen in Musician.bandIds)
+  // Verknüpfungen, die eigentlich beim jeweils anderen Eintrag gespeichert sind (z.B. die Musiker einer Band liegen in Musician.bandIds)
   final List<String> _relatedBandSelection = [];
   final List<String> _relatedMusicianSelection = [];
   final List<String> _relatedAlbumSelection = [];
   final List<String> _relatedSongSelection = [];
 
-  // Die Ausgangswerte der Textfelder, um echte Textänderungen von blossem
-  // Antippen (Cursor setzen) zu unterscheiden. TextEditingController meldet
-  // nämlich auch reine Cursor-Bewegungen als Änderung.
-  String _originalTitle = '';
-  String _originalFirstName = '';
-  String _originalLastName = '';
-  String _originalFoundedYear = '';
-  String _originalOrigin = '';
-  String _originalDuration = '';
-  String _originalDescription = '';
-
   @override
   void initState() {
     super.initState();
-    _titleField.addListener(_checkTextDirty);
-    _firstName.addListener(_checkTextDirty);
-    _lastName.addListener(_checkTextDirty);
-    _foundedYear.addListener(_checkTextDirty);
-    _origin.addListener(_checkTextDirty);
-    _durationSeconds.addListener(_checkTextDirty);
-    _description.addListener(_checkTextDirty);
+    _titleField.addListener(_markDirty);
+    _firstName.addListener(_markDirty);
+    _lastName.addListener(_markDirty);
+    _foundedYear.addListener(_markDirty);
+    _origin.addListener(_markDirty);
+    _durationSeconds.addListener(_markDirty);
+    _description.addListener(_markDirty);
   }
 
   @override
@@ -124,24 +109,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     setState(() => _dirty = true);
   }
 
-  // Wird bei jeder Änderung eines Textfelds aufgerufen, auch bei reinem
-  // Antippen. Setzt "dirty" daher nur, wenn sich der Text wirklich vom
-  // Ausgangswert unterscheidet.
-  void _checkTextDirty() {
-    if (_populating) return;
-
-    final bool geaendert = _titleField.text != _originalTitle ||
-        _firstName.text != _originalFirstName ||
-        _lastName.text != _originalLastName ||
-        _foundedYear.text != _originalFoundedYear ||
-        _origin.text != _originalOrigin ||
-        _durationSeconds.text != _originalDuration ||
-        _description.text != _originalDescription;
-
-    if (geaendert) _markDirty();
-  }
-
-  // ---------- Bearbeitungsmodus starten ----------
+  //  Bearbeitungsmodus starten (Bearbeiten drücken)
 
   void _startEditing() {
     final DatabaseItem item = _item;
@@ -168,7 +136,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _titleField.text = item.title;
       _foundedYear.text = item.founded;
       _origin.text = item.origin;
-      _genreSelection.addAll(item.genres);
+      _genreSelection.addAll(item.genreNames);
       _relatedMusicianSelection.addAll(repo.musicians
           .where((m) => m.bandIds.contains(item.id))
           .map((m) => m.title));
@@ -183,12 +151,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _lastName.text = item.lastName;
       _dateValue = item.dateOfBirth;
       _bandSelection.addAll(item.bandNames);
-      _roleSelection.addAll(item.roles);
+      _roleSelection.addAll(item.roleNames);
     } else if (item is Album) {
       _titleField.text = item.title;
       _dateValue = item.releaseDate;
       _bandSelection.addAll(item.bandNames);
-      _genreSelection.addAll(item.genres);
+      _genreSelection.addAll(item.genreNames);
       _relatedSongSelection.addAll(repo.songs
           .where((s) => s.albumIds.contains(item.id))
           .map((s) => s.title));
@@ -201,23 +169,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _bandSelection.addAll(item.bandNames);
     } else if (item is Genre) {
       _titleField.text = item.title;
-      _relatedBandSelection.addAll(item.bandIds
-          .map((id) => repo.bandById(id)?.title)
-          .whereType<String>());
+      _relatedBandSelection.addAll(repo.bands
+          .where((b) => b.genreIds.contains(item.id))
+          .map((b) => b.title));
     } else if (item is Role) {
       _titleField.text = item.title;
-      _relatedMusicianSelection.addAll(item.musicianIds
-          .map((id) => repo.musicianById(id)?.title)
-          .whereType<String>());
+      _relatedMusicianSelection.addAll(repo.musicians
+          .where((m) => m.roleIds.contains(item.id))
+          .map((m) => m.title));
     }
-
-    _originalTitle = _titleField.text;
-    _originalFirstName = _firstName.text;
-    _originalLastName = _lastName.text;
-    _originalFoundedYear = _foundedYear.text;
-    _originalOrigin = _origin.text;
-    _originalDuration = _durationSeconds.text;
-    _originalDescription = _description.text;
 
     _populating = false;
     setState(() => _editing = true);
@@ -299,9 +259,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     } else if (item is Song) {
       repo.deleteSong(item.id);
     } else if (item is Genre) {
-      repo.deleteGenre(item.id, item.title);
+      repo.deleteGenre(item.id);
     } else if (item is Role) {
-      repo.deleteRole(item.id, item.title);
+      repo.deleteRole(item.id);
     }
 
     Navigator.pop(context);
@@ -336,11 +296,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   // Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben
-  // Kategorie vorkommt. Wichtig vor allem bei Genre und Rolle: Ihre
-  // Verknüpfung läuft rein über den Namen (siehe Band.genres/Musician.roles),
-  // zwei Einträge mit demselben Namen würden dort sonst ungewollt zu einem
-  // verschmelzen. Dieselbe Prüfung samt Meldung nutzt auch der Erfassungs-
-  // Screen beim Neuanlegen (siehe add_data_screen.dart, _isUnique).
+  // Kategorie vorkommt. Verhindert vor allem verwirrende Duplikate (z.B.
+  // zwei Bands mit exakt demselben Namen) - dieselbe Prüfung samt Meldung
+  // nutzt auch der Erfassungs-Screen beim Neuanlegen (siehe
+  // add_data_screen.dart, _isUnique).
   bool _isNameUnique() {
     final DatabaseItem item = _item;
 
@@ -372,15 +331,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     }
     if (item is Genre) {
       final String neuerName = _titleField.text.trim();
-      if (neuerName.toLowerCase() == item.title.toLowerCase()) return true;
-      return !repo.genreNames
-          .any((g) => g.toLowerCase() == neuerName.toLowerCase());
+      return !repo.genres.any((g) =>
+          g.id != item.id && g.title.toLowerCase() == neuerName.toLowerCase());
     }
     if (item is Role) {
       final String neuerName = _titleField.text.trim();
-      if (neuerName.toLowerCase() == item.title.toLowerCase()) return true;
-      return !repo.roleNames
-          .any((r) => r.toLowerCase() == neuerName.toLowerCase());
+      return !repo.roles.any((r) =>
+          r.id != item.id && r.title.toLowerCase() == neuerName.toLowerCase());
     }
     return true;
   }
@@ -417,13 +374,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final DatabaseItem item = _item;
 
     if (item is Band) {
-      final String neuerTitel = _titleField.text.trim();
-      final bool umbenannt = neuerTitel != item.title;
-
       repo.updateBand(Band(
         id: item.id,
-        title: neuerTitel,
-        genres: [..._genreSelection],
+        title: _titleField.text.trim(),
+        genreIds: repo.idsForGenreNames(_genreSelection),
         founded: _foundedYear.text.trim(),
         origin: _origin.text.trim(),
         descriptionText: _description.text.trim(),
@@ -479,8 +433,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         },
       );
 
-      if (umbenannt) repo.cascadeBandRename(item.id, neuerTitel);
-
       _item = repo.bandById(item.id) ?? item;
     } else if (item is Musician) {
       repo.updateMusician(Musician(
@@ -489,21 +441,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         lastName: _lastName.text.trim(),
         dateOfBirth: _dateValue,
         bandIds: repo.idsForBandNames(_bandSelection),
-        bandNames: [..._bandSelection],
-        roles: [..._roleSelection],
+        roleIds: repo.idsForRoleNames(_roleSelection),
         descriptionText: _description.text.trim(),
       ));
       _item = repo.musicianById(item.id) ?? item;
     } else if (item is Album) {
-      final String neuerTitel = _titleField.text.trim();
-      final bool umbenannt = neuerTitel != item.title;
-
       repo.updateAlbum(Album(
         id: item.id,
-        title: neuerTitel,
+        title: _titleField.text.trim(),
         bandIds: repo.idsForBandNames(_bandSelection),
-        bandNames: [..._bandSelection],
-        genres: [..._genreSelection],
+        genreIds: repo.idsForGenreNames(_genreSelection),
         releaseDate: _dateValue,
         descriptionText: _description.text.trim(),
       ));
@@ -524,8 +471,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         },
       );
 
-      if (umbenannt) repo.cascadeAlbumRename(item.id, neuerTitel);
-
       _item = repo.albumById(item.id) ?? item;
     } else if (item is Song) {
       repo.updateSong(Song(
@@ -533,75 +478,63 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         title: _titleField.text.trim(),
         durationSeconds: int.tryParse(_durationSeconds.text.trim()) ?? 0,
         albumIds: repo.idsForAlbumNames(_albumSelection),
-        albumNames: [..._albumSelection],
         bandIds: repo.idsForBandNames(_bandSelection),
-        bandNames: [..._bandSelection],
         releaseDate: _dateValue,
         descriptionText: _description.text.trim(),
       ));
       _item = repo.songById(item.id) ?? item;
     } else if (item is Genre) {
-      final String neuerName = _titleField.text.trim();
+      repo.updateGenre(Genre(
+        id: item.id,
+        title: _titleField.text.trim(),
+        descriptionText: _description.text.trim(),
+      ));
 
       _syncReverse(
         before: repo.bands
-            .where((b) => b.genres.contains(item.title))
+            .where((b) => b.genreIds.contains(item.id))
             .map((b) => b.title)
             .toSet(),
         after: _relatedBandSelection,
         onAdd: (title) {
           final Band? band = repo.bandByTitle(title);
-          if (band != null) repo.addGenreToBand(band.id, item.title);
+          if (band != null) repo.addGenreToBand(band.id, item.id);
         },
         onRemove: (title) {
           final Band? band = repo.bandByTitle(title);
-          if (band != null) repo.removeGenreFromBand(band.id, item.title);
+          if (band != null) repo.removeGenreFromBand(band.id, item.id);
         },
       );
 
-      if (neuerName != item.title) {
-        repo.renameGenre(item.id, item.title, neuerName);
-      }
-      repo.updateGenreDescription(item.id, _description.text.trim());
-
-      DatabaseItem aktualisiertesGenre = item;
-      for (final Genre genre in repo.genres) {
-        if (genre.id == item.id) aktualisiertesGenre = genre;
-      }
-      _item = aktualisiertesGenre;
+      _item = repo.genreById(item.id) ?? item;
     } else if (item is Role) {
-      final String neuerName = _titleField.text.trim();
+      repo.updateRole(Role(
+        id: item.id,
+        title: _titleField.text.trim(),
+        descriptionText: _description.text.trim(),
+      ));
 
       _syncReverse(
         before: repo.musicians
-            .where((m) => m.roles.contains(item.title))
+            .where((m) => m.roleIds.contains(item.id))
             .map((m) => m.title)
             .toSet(),
         after: _relatedMusicianSelection,
         onAdd: (title) {
           final Musician? musician = repo.musicianByTitle(title);
           if (musician != null) {
-            repo.addRoleToMusician(musician.id, item.title);
+            repo.addRoleToMusician(musician.id, item.id);
           }
         },
         onRemove: (title) {
           final Musician? musician = repo.musicianByTitle(title);
           if (musician != null) {
-            repo.removeRoleFromMusician(musician.id, item.title);
+            repo.removeRoleFromMusician(musician.id, item.id);
           }
         },
       );
 
-      if (neuerName != item.title) {
-        repo.renameRole(item.id, item.title, neuerName);
-      }
-      repo.updateRoleDescription(item.id, _description.text.trim());
-
-      DatabaseItem aktualisierteRolle = item;
-      for (final Role rolle in repo.roles) {
-        if (rolle.id == item.id) aktualisierteRolle = rolle;
-      }
-      _item = aktualisierteRolle;
+      _item = repo.roleById(item.id) ?? item;
     }
 
     setState(() {
@@ -1026,10 +959,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
       ),
 
-      // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas
-      // geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander.
-      // Ohne eigene shape würde das globale Theme (CircleBorder, gedacht für
-      // den runden Plus-Button) auch hier greifen und den Text abschneiden.
+      // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird.
+
       floatingActionButton: _editing
           ? (_dirty
               ? FloatingActionButton.extended(

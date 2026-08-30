@@ -1,7 +1,5 @@
-// database_overview_screen.dart
-// Übersichtsseite des Datenbank-Bereichs.
-// Aufbau analog zu den Detailseiten: Header, Textbox und Info-Boxen.
-// Jede Box führt auf die Listenseite der jeweiligen Kategorie.
+// Übersichtsseite des Datenbank-Bereichs. Aufbau analog zu den Detailseiten: Header, Textbox und Info-Boxen.
+
 
 import 'package:flutter/material.dart';
 import '../data/database_repository.dart';
@@ -23,8 +21,7 @@ class DatabaseOverviewScreen extends StatefulWidget {
 class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
   @override
   Widget build(BuildContext context) {
-    // Bei jedem Aufbau die aktuellen Kategorien holen, damit neu
-    // erfasste Einträge sofort mitgezählt werden
+    // Bei jedem Aufbau die aktuellen Kategorien holen, damit neu erfasste Einträge sofort mitgezählt werden in der Liste. 
     final List<DatabaseCategory> categories = repo.categories;
 
     return Scaffold(
@@ -51,7 +48,7 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
 
             const SizedBox(height: 20),
 
-            // Kleine Textbox mit Platzhaltertext (Lorem Ipsum)
+            // Kleine Textbox mit Platzhaltertext 
             const TextCard(
               text:
                   'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam '
@@ -75,8 +72,7 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
         ),
       ),
 
-      // Runder Plus-Button unten rechts, öffnet das Erfassungsformular.
-      // Von hier aus ist die Kategorie frei wählbar.
+      // Runder Plus-Button unten rechts, öffnet das Erfassungsformular. Von hier aus ist die Kategorie frei wählbar.
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push<bool>(
@@ -95,8 +91,7 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
 }
 
 // Eigenes Widget für eine Kategorie-Box in der Übersicht.
-// Führt nicht auf einen einzelnen Eintrag, sondern auf die Listenseite
-// der Kategorie, darum ein eigenes Widget statt ItemRow.
+
 class _CategoryRow extends StatelessWidget {
   final DatabaseCategory category;
 

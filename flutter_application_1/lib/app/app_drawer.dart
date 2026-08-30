@@ -38,8 +38,7 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
 
-          // Die drei Einträge unterscheiden sich nur in Icon, Text und Ziel.
-          // Darum ein kleines eigenes Widget statt drei Mal derselbe Code.
+          // Die drei Einträge unterscheiden sich nur in Icon, Text und Ziel. Darum ein kleines eigenes Widget statt drei Mal derselbe Code.
           _DrawerLink(
             icon: Icons.business,
             label: 'Impressum',
@@ -66,8 +65,7 @@ class _DrawerLink extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  // Eine Funktion, die den Zielscreen erzeugt. So wird der Screen erst
-  // gebaut, wenn der Eintrag wirklich angetippt wird.
+  // Eine Funktion, die den Zielscreen erzeugt. So wird der Screen erst gebaut, wenn der Eintrag wirklich angetippt wird.
   final Widget Function() openScreen;
 
   const _DrawerLink({

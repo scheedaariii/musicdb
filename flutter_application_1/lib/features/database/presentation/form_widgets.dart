@@ -1,6 +1,4 @@
-// form_widgets.dart
-// Die Eingabe-Bausteine des Erfassungsformulars.
-// Alle Felder sehen aus wie die weissen Boxen der Datenseiten.
+// Die Eingabe-Bausteine des Erfassungsformulars. Alle Felder sehen aus wie die weissen Boxen der Datenseiten.
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -173,9 +171,7 @@ class FormDropdown extends StatelessWidget {
   }
 }
 
-// Auswahlfeld mit mehreren Auswahlen.
-// Die getroffenen Auswahlen erscheinen als Chips und können
-// über das Kreuz wieder entfernt werden.
+// Auswahlfeld mit mehreren Auswahlen. Die getroffenen Auswahlen erscheinen als Chips und können über das Kreuz wieder entfernt werden. Habe ich selbst nicht hinbekommen und mit Hilfe von AI hinzugefügt.
 class FormMultiSelect extends StatelessWidget {
   final String label;
   final List<String> options;
@@ -269,10 +265,7 @@ class FormMultiSelect extends StatelessWidget {
   }
 }
 
-// Auswahlfeld mit mehreren Auswahlen und Suchfeld, für lange Listen wie
-// alle Musiker oder alle Songs. Der Plus-Button öffnet die Auswahl als
-// Bottom-Sheet mit Filter, ein Tippen auf einen Treffer fügt ihn sofort
-// hinzu. Entfernt wird wie bei FormMultiSelect über das Kreuz am Chip.
+// Auswahlfeld mit mehreren Auswahlen und Suchfeld, für lange Listen wie alle Musiker oder alle Songs. Selbes verhalten für Chips wie bei class FormMultiSelect extends StatelessWidget weiter oben.
 class FormFilterableMultiSelect extends StatelessWidget {
   final String label;
   final List<String> options;
@@ -291,7 +284,7 @@ class FormFilterableMultiSelect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Bereits gewählte Einträge nicht nochmals anbieten
+    // Bereits gewählte Einträge nicht weiter anzeigen.
     final List<String> offen = options.where((o) => !selected.contains(o)).toList()
       ..sort();
 
@@ -366,9 +359,7 @@ class FormFilterableMultiSelect extends StatelessWidget {
   }
 }
 
-// Der Inhalt des Bottom-Sheets: Suchfeld oben, gefilterte Liste darunter.
-// Führt eine eigene Kopie der Optionen, damit ausgewählte Einträge sofort
-// aus der Liste verschwinden, ohne das Sheet zu schliessen.
+// Der Inhalt des Bottom-Sheets: Suchfeld oben, gefilterte Liste darunter. Führt eine eigene Kopie der Optionen, damit ausgewählte Einträge sofort aus der Liste verschwinden, ohne das Sheet zu schliessen. Auch dieser Teil ist mir Hilfe von AI enstanden.
 class _FilterSheet extends StatefulWidget {
   final String title;
   final List<String> options;

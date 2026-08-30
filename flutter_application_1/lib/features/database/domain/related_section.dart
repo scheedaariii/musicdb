@@ -1,7 +1,5 @@
-// related_section.dart
-// Ein Abschnitt mit verknüpften Einträgen auf einer Detailseite,
-// z.B. die Musiker einer Band oder die Bands eines Genres.
-// Die Einträge sind selbst wieder DatabaseItems und dadurch antippbar.
+// Ein Abschnitt mit verknüpften Einträgen auf einer Detailseite, z.B. die Musiker einer Band oder die Bands eines Genres.
+// Die Einträge sind selbst wieder DatabaseItems und dadurch antippbar. 
 
 import 'database_item.dart';
 

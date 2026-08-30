@@ -1,12 +1,7 @@
-// role.dart
 // Das Datenmodell einer Rolle (Instrument bzw. Aufgabe in einer Band).
-//
-// Die Musiker-Zugehörigkeit (musicianIds) wird weiterhin aus den Rollen
-// der erfassten Musiker abgeleitet. Der Name und eine optionale
-// Beschreibung liegen dagegen als eigenes Dokument in der Firestore-
-// Sammlung "roles" (siehe DatabaseRepository.load/addRole).
 
 import 'package:flutter/material.dart';
+import '../data/database_repository.dart';
 import 'database_item.dart';
 import 'info_field.dart';
 
@@ -18,12 +13,10 @@ class Role implements DatabaseItem {
   final String title;              // Name der Rolle, z.B. "Schlagzeug"
 
   final String descriptionText;    // Beschreibung, falls erfasst
-  final List<String> musicianIds;  // Musiker mit dieser Rolle
 
   const Role({
     required this.id,
     required this.title,
-    required this.musicianIds,
     this.descriptionText = '',
   });
 
@@ -32,14 +25,19 @@ class Role implements DatabaseItem {
         id: id,
         title: map['title'] as String? ?? '',
         descriptionText: map['descriptionText'] as String? ?? '',
-        musicianIds: const [],
       );
 
-  // Nur Name und Beschreibung werden in Firestore gespeichert, die Musiker-Zugehörigkeit ergibt sich aus den Musikern selbst.
+  // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
         'title': title,
         'descriptionText': descriptionText,
       };
+
+  // Die Musiker, die diese Rolle ausüben
+  List<String> get musicianIds => repo.musicians
+      .where((musician) => musician.roleIds.contains(id))
+      .map((musician) => musician.id)
+      .toList();
 
   int get musicianCount => musicianIds.length;
 

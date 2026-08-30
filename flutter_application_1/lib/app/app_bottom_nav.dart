@@ -1,18 +1,11 @@
-// app_bottom_nav.dart
-// Die Bottom Navigation der App als eigenes Widget.
-//
-// Sie wird nicht nur auf den Hauptseiten angezeigt, sondern auch auf den
-// Listen- und Detailseiten der Datenbank. Wird dort ein Tab angetippt,
-// kehrt die App zur Hauptseite zurück und wechselt in den gewählten Bereich.
+// Die Bottom Navigation der App als eigenes Widget.Wird in der gesammten App angezeigt
 
 import 'package:flutter/material.dart';
 
-// Der aktuell gewählte Tab (0 = Database, 1 = Info, 2 = Profil).
-// Als ValueNotifier, damit auch aufgesetzte Seiten den Tab wechseln können.
+// Der aktuell gewählte Tab (0 = Database, 1 = Info, 2 = Profil). Als ValueNotifier, damit auch aufgesetzte Seiten den Tab wechseln können.
 final ValueNotifier<int> selectedTab = ValueNotifier<int>(0);
 
 class AppBottomNav extends StatelessWidget {
-  // Auf aufgesetzten Seiten muss vor dem Wechsel zurückgesprungen werden
   final bool popToRoot;
 
   const AppBottomNav({super.key, this.popToRoot = false});

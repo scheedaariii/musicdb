@@ -10,7 +10,7 @@ import '../features/profile/presentation/profile_screen.dart';
 class NavigationScreen extends StatelessWidget {
   const NavigationScreen({super.key});
 
-  // Die akutellen Hauptbereiche der App
+  // Die aktuellen Hauptbereiche der App
   static const List<Widget> _screens = [
     DatabaseOverviewScreen(),
     InfoScreen(),
@@ -19,16 +19,14 @@ class NavigationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Der gewählte Tab liegt in selectedTab, damit ihn auch aufgesetzte
-    // Seiten (Listen, Details, Formular) umschalten können
+    // Der gewählte Tab liegt in selectedTab, damit ihn auch aufgesetzte Seiten (Listen, Details, Formular) umschalten können
     return ValueListenableBuilder<int>(
       valueListenable: selectedTab,
       builder: (context, currentIndex, child) {
         return Scaffold(
-          // Aufrufen des aktuell ausgewählten Screens
+          
           body: _screens[currentIndex],
 
-          // Bottom Navigation mit drei Tabs
           bottomNavigationBar: const AppBottomNav(),
         );
       },

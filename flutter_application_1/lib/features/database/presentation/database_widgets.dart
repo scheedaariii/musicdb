@@ -1,7 +1,4 @@
-// database_widgets.dart
-// Die wiederkehrenden Bausteine des Datenbank-Bereichs.
-// Listenseite und Detailseite sind gleich aufgebaut und verwenden
-// dieselben Widgets, damit das Design überall identisch bleibt.
+// Die wiederkehrenden Bausteine des Datenbank-Bereichs. Listenseite und Detailseite sind gleich aufgebaut und verwenden dieselben Widgets, damit das Design überall identisch bleibt.
 
 import 'package:flutter/material.dart';
 import '../domain/database_item.dart';
@@ -161,15 +158,11 @@ class SectionTitle extends StatelessWidget {
   }
 }
 
-// Eine Zeile in einer Eintragsliste.
-// Ein Tippen öffnet immer die Detailseite des Eintrags.
+// Eine Zeile in einer Eintragsliste. Ein Tippen öffnet immer die Detailseite des Eintrags.
 class ItemRow extends StatelessWidget {
   final DatabaseItem item;
 
-  // Wird aufgerufen, sobald die Detailseite wieder geschlossen wird. Damit
-  // kann die aufrufende Liste sich neu aufbauen, falls der Eintrag dort
-  // bearbeitet oder gelöscht wurde (Flutter baut eine Seite beim Zurück-
-  // Navigieren sonst nicht automatisch neu auf).
+  // Wird aufgerufen, sobald die Detailseite wieder geschlossen wird. Damit kann die Liste sich neu aufbauen.
   final VoidCallback? onReturn;
 
   const ItemRow({super.key, required this.item, this.onReturn});

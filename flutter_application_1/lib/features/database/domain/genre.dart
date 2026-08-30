@@ -1,7 +1,8 @@
-// genre.dart
-// Das Datenmodell eines Genres.
+
+// Das Datenmodell eines Genres. 
 
 import 'package:flutter/material.dart';
+import '../data/database_repository.dart';
 import 'database_item.dart';
 import 'info_field.dart';
 
@@ -10,34 +11,36 @@ class Genre implements DatabaseItem {
   final String id;
 
   @override
-  final String title;         // Name des Genres
+  final String title;           // Name des Genres
 
   final String descriptionText; // Beschreibung
-  final int bandCount;        // Anzahl Bands mit diesem Genre
-  final List<String> bandIds; // Verknüpfung zu diesen Bands
 
   const Genre({
     required this.id,
     required this.title,
-    required this.bandCount,
-    required this.bandIds,
     this.descriptionText = '',
   });
 
-  // Daten aus Firestore laden
+  // Baut ein Genre aus einem Firestore-Dokument auf
   factory Genre.fromMap(String id, Map<String, dynamic> map) => Genre(
         id: id,
         title: map['title'] as String? ?? '',
         descriptionText: map['descriptionText'] as String? ?? '',
-        bandCount: 0,
-        bandIds: const [],
       );
 
-  // Nur Name und Beschreibung werden in Firestore gespeichert. Der Link zwischen Band/Genre kommt von den Bands
+  // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
         'title': title,
         'descriptionText': descriptionText,
       };
+
+  // Die Bands, die dieses Genre spielen
+  List<String> get bandIds => repo.bands
+      .where((band) => band.genreIds.contains(id))
+      .map((band) => band.id)
+      .toList();
+
+  int get bandCount => bandIds.length;
 
   // Ein Genre hat keine übergeordnete Band, daher bleibt die Zeile leer
   @override

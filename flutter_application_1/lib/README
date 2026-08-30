@@ -1,0 +1,35 @@
+1. Welche Daten werden in Firebase gespeichert?
+
+Sechs Firestore-Sammlungen, jede über IDs miteinander verknüpft (keine Namens-Kopien):
+
+bands: title, descriptionText, genreIds, origin, founded
+musicians: firstName, lastName, dateOfBirth, descriptionText, bandIds, roleIds
+albums: title, bandIds, genreIds, releaseDate, descriptionText
+songs: title, durationSeconds, albumIds, bandIds, releaseDate, descriptionText
+genres: title, descriptionText
+roles: title, descriptionText
+
+2. Wo sind Create, Read, Update, Delete umgesetzt?
+Create: add_data_screen.dart (Formular über den Plus-Button) → ruft repo.addBand()/addMusician()/usw. in database_repository.dart auf, die jeweils eine neue Firestore-ID vergeben und das Dokument schreiben.
+Read: DatabaseRepository.load() holt beim App-Start alle sechs Sammlungen; database_category_screen.dart zeigt die Listen, item_detail_screen.dart die Detailansicht.
+Update: item_detail_screen.dart im Bearbeitungsmodus (Stift-Button) → repo.updateBand()/updateMusician()/usw.
+Delete: derselbe Screen, Löschen-Button mit Bestätigungsdialog → repo.deleteBand()/usw., die auch alle Verknüpfungen bei anderen Einträgen bereinigen (z.B. eine gelöschte Band wird auch aus den Musikern/Alben/Songs entfernt, die auf sie verweisen).
+
+3. Was wurde gegenüber Teil 1 weiterentwickelt?
+
+Das Datenschema wurde deutlich erweitert. Bands ist nun nur noch eine Kategorie die Teil der ganzen Datenbank ist und wird nicht mehr direkt ausgewählt über "Database" im Footer. Dieser Button zielt nun auf die Kategory übersicht wo Bands gemeinsam mit anderen Kategorien angezeigt wird.
+Das Projekt wurde auf Firestore angelegt und damit verknüpft. Ein Grossteil der Daten wird nun von Firestore geladen und dahin gesichert.
+Alle CRUD Funktionen wurden implementiert. Daten können angelegt, gelöscht und bearbeitet werden. Die wurden nahtlos in die App eingefügt.
+Dateneingaben werden vor dem speichern validiert.
+Eine Filter Funktion wurde eingebaut und grössere Datenbestände rasch zu durchforsten.
+Diverse Widgets und auch Desing Elemente die mehrfach verwendet wurden sind identifiziert und zusammengeführt worden.
+Der Drawer ist aktuell absichtlich nicht in den Detailseiten drin. Er bringt dort aktuell keinen Mehrwert.
+
+4. Sinnvolle nächste Erweiterung für Teil 3
+
+Firebase Authentication implementieren. Firestore.rules steht aktuell komplett offen weil es noch keine Nutzeranmeldung gibt. Daraus folgt das umbauen der statischen Profilseite in ein Interaktives Element mit echten Nutzen.
+Ein Indikator der anzeigt wen man sich im "Offline-Modus" befindet.
+Das Datumsformat ist akuell Jahr/Monat/Tag -> zu Tag/Monat/Jahr ändern
+Platzhalter Texte vollständig ersetztn.
+Bug beheben: Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird und der speicher Button somit aktiv wird.
+

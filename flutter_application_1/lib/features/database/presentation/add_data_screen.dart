@@ -1,18 +1,9 @@
-// add_data_screen.dart
-// Formular zum Erfassen neuer Einträge.
-//
-// Der Screen wird über den Plus-Button geöffnet. Von der Übersicht aus ist
-// die Kategorie frei wählbar, von einer Kategorieseite aus ist sie fest
-// vorgegeben und das Auswahlfeld gesperrt.
+// Formular zum Erfassen neuer Einträge. Der Screen wird über den Plus-Button geöffnet. 
 
 import 'package:flutter/material.dart';
 
 import '../data/database_repository.dart';
-import '../domain/album.dart';
-import '../domain/band.dart';
 import '../domain/database_category.dart';
-import '../domain/musician.dart';
-import '../domain/song.dart';
 import 'database_widgets.dart';
 import 'form_widgets.dart';
 import '../../../app/app_colors.dart';
@@ -40,8 +31,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   final TextEditingController _description = TextEditingController();
   final TextEditingController _origin = TextEditingController();
 
-  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht (Release
-  // Datum bei Alben/Songs, Geburtsdatum bei Musikern)
+  // Für das eine Datumsfeld, benötigt für Kategorien
   String _dateValue = '';
 
   // Mehrfachauswahlen
@@ -198,10 +188,10 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
       case CategoryKind.musiker:
         return [
-          FormTextField(label: 'Name', required: true, controller: _name),
+          FormTextField(label: 'Vorname', required: true, controller: _name),
           const SizedBox(height: 16),
           FormTextField(
-              label: 'Lastname', required: true, controller: _lastName),
+              label: 'Nachname', required: true, controller: _lastName),
           const SizedBox(height: 16),
           FormDateField(
             label: 'Geburtsdatum',
@@ -391,32 +381,39 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
     switch (_kind!) {
       case CategoryKind.bands:
+        final List<String> genreIds = repo.idsForGenreNames(_genres);
         return !repo.bands.any((b) =>
             b.title.toLowerCase() == name.toLowerCase() &&
             b.founded == _foundedYear.text.trim() &&
-            _sameSet(b.genres, _genres));
+            _sameSet(b.genreIds, genreIds));
 
       case CategoryKind.musiker:
         final String nachname = _lastName.text.trim();
+        final List<String> bandIds = repo.idsForBandNames(_bands);
+        final List<String> roleIds = repo.idsForRoleNames(_roles);
         return !repo.musicians.any((m) =>
             m.firstName.toLowerCase() == name.toLowerCase() &&
             m.lastName.toLowerCase() == nachname.toLowerCase() &&
-            _sameSet(m.bandNames, _bands) &&
-            _sameSet(m.roles, _roles));
+            _sameSet(m.bandIds, bandIds) &&
+            _sameSet(m.roleIds, roleIds));
 
       case CategoryKind.alben:
+        final List<String> bandIds = repo.idsForBandNames(_bands);
+        final List<String> genreIds = repo.idsForGenreNames(_genres);
         return !repo.albums.any((a) =>
             a.title.toLowerCase() == name.toLowerCase() &&
             a.releaseDate == _dateValue &&
-            _sameSet(a.bandNames, _bands) &&
-            _sameSet(a.genres, _genres));
+            _sameSet(a.bandIds, bandIds) &&
+            _sameSet(a.genreIds, genreIds));
 
       case CategoryKind.songs:
+        final List<String> albumIds = repo.idsForAlbumNames(_albums);
+        final List<String> bandIds = repo.idsForBandNames(_bands);
         return !repo.songs.any((s) =>
             s.title.toLowerCase() == name.toLowerCase() &&
             s.releaseDate == _dateValue &&
-            _sameSet(s.albumNames, _albums) &&
-            _sameSet(s.bandNames, _bands) &&
+            _sameSet(s.albumIds, albumIds) &&
+            _sameSet(s.bandIds, bandIds) &&
             s.durationSeconds == _durationValue);
 
       // Bei Genre und Rolle muss allein der Name eindeutig sein
@@ -432,7 +429,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
   int get _durationValue => int.tryParse(_durationSeconds.text.trim()) ?? 0;
 
-  // Vergleicht zwei Auswahlen unabhängig von der Reihenfolge
+  // Vergleicht zwei Auswahlen unabhängig von der Reihenfolge. Wen z.B. die Genres bei einer Band einmal Trash/Deathmetal und einmal Deathmetal/Trash sind wird es trotzdem als doppelter Eintrag erkannt.
   bool _sameSet(List<String> a, List<String> b) {
     if (a.length != b.length) return false;
     final Set<String> mengeA = a.map((e) => e.toLowerCase()).toSet();
@@ -445,63 +442,60 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
     switch (_kind!) {
       case CategoryKind.bands:
-        repo.addBand(Band(
-          id: repo.newId(name, repo.bands.map((b) => b.id).toList()),
+        repo.addBand(
           title: name,
-          genres: [..._genres],
+          genreIds: repo.idsForGenreNames(_genres),
           founded: _foundedYear.text.trim(),
           origin: _origin.text.trim(),
           descriptionText: _description.text.trim(),
-        ));
+        );
         break;
 
       case CategoryKind.musiker:
         final String nachname = _lastName.text.trim();
-        repo.addMusician(Musician(
-          id: repo.newId(
-              '$name $nachname', repo.musicians.map((m) => m.id).toList()),
+        repo.addMusician(
           firstName: name,
           lastName: nachname,
           dateOfBirth: _dateValue,
           bandIds: repo.idsForBandNames(_bands),
-          bandNames: [..._bands],
-          roles: [..._roles],
+          roleIds: repo.idsForRoleNames(_roles),
           descriptionText: _description.text.trim(),
-        ));
+        );
         break;
 
       case CategoryKind.alben:
-        repo.addAlbum(Album(
-          id: repo.newId(name, repo.albums.map((a) => a.id).toList()),
+        repo.addAlbum(
           title: name,
           bandIds: repo.idsForBandNames(_bands),
-          bandNames: [..._bands],
-          genres: [..._genres],
+          genreIds: repo.idsForGenreNames(_genres),
           releaseDate: _dateValue,
           descriptionText: _description.text.trim(),
-        ));
+        );
         break;
 
       case CategoryKind.songs:
-        repo.addSong(Song(
-          id: repo.newId(name, repo.songs.map((s) => s.id).toList()),
+        repo.addSong(
           title: name,
           albumIds: repo.idsForAlbumNames(_albums),
-          albumNames: [..._albums],
           bandIds: repo.idsForBandNames(_bands),
-          bandNames: [..._bands],
           durationSeconds: _durationValue,
           releaseDate: _dateValue,
           descriptionText: _description.text.trim(),
-        ));
+        );
         break;
 
       case CategoryKind.genres:
-        repo.addGenre(name, description: _description.text.trim());
+        repo.addGenre(
+          title: name,
+          descriptionText: _description.text.trim(),
+        );
         break;
 
       case CategoryKind.rolle:
-        repo.addRole(name, description: _description.text.trim());
+        repo.addRole(
+          title: name,
+          descriptionText: _description.text.trim(),
+        );
         break;
     }
   }

@@ -1,15 +1,10 @@
-// app_widgets.dart
-// Bausteine, die in der ganzen App vorkommen – nicht nur im Datenbank-Bereich.
-//
-// Vorher war das Aussehen der weissen Karten in sieben Dateien einzeln
-// ausgeschrieben und die Methode _buildSection existierte vier Mal fast
-// wortgleich. Hier steht jede dieser Vorlagen genau ein Mal.
+// Bausteine, die in der ganzen App vorkommen 
+// Vorher war das Aussehen der weissen Karten in sieben Dateien einzeln ausgeschrieben.
 
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-// Das gemeinsame Aussehen aller weissen Karten.
-// Nur die Ecken-Rundung unterscheidet sich je nach Grösse der Karte.
+// Das gemeinsame Aussehen aller weissen Karten. Nur die Ecken-Rundung unterscheidet sich je nach Grösse der Karte.
 BoxDecoration appCardDecoration({double radius = 10}) {
   return BoxDecoration(
     color: AppColors.white,
@@ -48,8 +43,7 @@ class TextCard extends StatelessWidget {
   }
 }
 
-// Weisse Karte mit Titel und Text, der Titel bekommt einen goldenen Balken.
-// Wird auf dem Info-Screen und den drei Screens aus dem Drawer verwendet.
+// Weisse Karte mit Titel und Text, der Titel bekommt einen goldenen Balken. Wird auf dem Info-Screen und den drei Screens aus dem Drawer verwendet.
 class SectionCard extends StatelessWidget {
   final String title;
   final String content;

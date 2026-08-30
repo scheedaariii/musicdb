@@ -1,6 +1,4 @@
-// app_colors.dart
 // Die Farbpalette der App an einer einzigen Stelle.
-//
 // Vorher standen dieselben Hex-Werte (z.B. 0xFF242F40) über 90 Mal verteilt
 // im Code. Wer die Farbe ändern wollte, musste jede Stelle einzeln suchen.
 // Jetzt gibt es pro Farbe genau einen Namen und genau einen Wert.
