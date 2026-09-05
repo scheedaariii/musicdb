@@ -23,7 +23,11 @@ class _AddDataScreenState extends State<AddDataScreen> {
   // Die aktuell gewählte Kategorie
   CategoryKind? _kind;
 
+  // Änderung (Feedback "keine WriteSperren"): sperrt während eines laufenden Speichervorgangs den Speichern-Button, damit ein zweiter Klick nicht einen weiteren, doppelten Eintrag anlegt, während noch auf Firestore gewartet wird.
+  bool _saving = false;
+
   // Eingabefelder
+  
   final TextEditingController _name = TextEditingController();
   final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
@@ -120,7 +124,8 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
               const SizedBox(height: 24),
 
-              SaveButton(onPressed: _onSave),
+              // Änderung (Feedback "keine WriteSperren"): onPressed ist während _saving null, SaveButton.onPressed wurde dafür auf VoidCallback? umgestellt.
+              SaveButton(onPressed: _saving ? null : _onSave),
             ],
 
             const SizedBox(height: 24),
@@ -344,7 +349,10 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
   // ---------- Speichern ----------
 
-  void _onSave() {
+  // Änderung (Feedback "keine WriteSperren" + "kein Rollback bei Schreibfehlern"): async, wartet jetzt  den Firestore-Schreibvorgang ab, siehe (database_repository.dart), bevor zur vorherigen Seite zurückgekehrt wird - vorher wurde sofort zurücknavigiert, ohne auf das Ergebnis des Speicherns zu warten.
+  Future<void> _onSave() async {
+    if (_saving) return;
+
     // 1. Pflichtfelder prüfen
     if (!_mandatoryFilled()) {
       _showMessage('Bitte alle Pflichtfelder ausfüllen!');
@@ -357,8 +365,12 @@ class _AddDataScreenState extends State<AddDataScreen> {
       return;
     }
 
-    // 3. Speichern
-    _save();
+    setState(() => _saving = true);
+
+    // 3. Speichern (wird jetzt abgewartet)
+    await _save();
+
+    if (!mounted) return;
 
     // Zurück zur vorherigen Seite, damit die Liste neu aufgebaut wird
     Navigator.pop(context, true);
@@ -437,12 +449,13 @@ class _AddDataScreenState extends State<AddDataScreen> {
     return mengeA.containsAll(mengeB);
   }
 
-  void _save() {
+  // Änderung nach feedback: async, wartet jetzt den Firestore-Schreibvorgang ab und ergänzt die lokale Liste nur bei Erfolg, siehe database_repository.dart.
+  Future<void> _save() async {
     final String name = _name.text.trim();
 
     switch (_kind!) {
       case CategoryKind.bands:
-        repo.addBand(
+        await repo.addBand(
           title: name,
           genreIds: repo.idsForGenreNames(_genres),
           founded: _foundedYear.text.trim(),
@@ -453,7 +466,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
       case CategoryKind.musiker:
         final String nachname = _lastName.text.trim();
-        repo.addMusician(
+        await repo.addMusician(
           firstName: name,
           lastName: nachname,
           dateOfBirth: _dateValue,
@@ -464,7 +477,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
         break;
 
       case CategoryKind.alben:
-        repo.addAlbum(
+        await repo.addAlbum(
           title: name,
           bandIds: repo.idsForBandNames(_bands),
           genreIds: repo.idsForGenreNames(_genres),
@@ -474,7 +487,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
         break;
 
       case CategoryKind.songs:
-        repo.addSong(
+        await repo.addSong(
           title: name,
           albumIds: repo.idsForAlbumNames(_albums),
           bandIds: repo.idsForBandNames(_bands),
@@ -485,14 +498,14 @@ class _AddDataScreenState extends State<AddDataScreen> {
         break;
 
       case CategoryKind.genres:
-        repo.addGenre(
+        await repo.addGenre(
           title: name,
           descriptionText: _description.text.trim(),
         );
         break;
 
       case CategoryKind.rolle:
-        repo.addRole(
+        await repo.addRole(
           title: name,
           descriptionText: _description.text.trim(),
         );

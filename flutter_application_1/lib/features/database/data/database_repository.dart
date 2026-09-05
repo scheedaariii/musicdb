@@ -1,21 +1,16 @@
 // database_repository.dart
 // Zuständig für die Firebase-Verknüpfung und das Management der Daten.
-// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu
-// erfasste Einträge landen sofort in der jeweiligen Liste und werden im
-// Hintergrund nach Firestore geschrieben.
+// Die Listen werden beim Start über load() aus Firestore gefüllt. Neu erfasste Einträge landen erst in der jeweiligen Liste, nachdem das Schreiben nach Firestore erfolgreich war (siehe _write unten).
 //
-// Verknüpfungen zwischen Einträgen (z.B. welche Bands ein Musiker hat)
-// werden ausschliesslich über IDs gespeichert (bandIds, genreIds, ...).
-// Es gibt nirgends eine zusätzlich gespeicherte Kopie eines Namens - der
-// Name wird bei Bedarf immer frisch über die passende ...ById-Methode
-// nachgeschlagen (siehe z.B. Musician.bandNames). Dadurch braucht eine
-// Umbenennung (updateBand, updateGenre, ...) auch nirgends sonst
-// nachgezogen zu werden: sie ändert nur das eine betroffene Dokument.
+// Verknüpfungen zwischen Einträgen (z.B. welche Bands ein Musiker hat) werden ausschliesslich über IDs gespeichert (bandIds, genreIds, ...).
+//
+// Überarbeitung Feedback zwischenabgabe: Die add-/update-/delete- Methoden sind jetzt async und geben Future<void> zurück, damit die aufrufenden Screens den Abschluss des Schreibvorgangs abwarten können
+// Ausserdem kennt dieses Repository die Flutter-UI nicht mehr direkt (siehe lastError).
+// Die Änderungen Zur verbesserung des Kaskadenverhaltens und atomarität konnten nur durch AI unterstützung umgesetzt werden.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
-import '../../../app/app_messenger.dart';
 import '../domain/album.dart';
 import '../domain/band.dart';
 import '../domain/database_category.dart';
@@ -44,8 +39,13 @@ class DatabaseRepository {
 
   bool _loaded = false;
 
-  // Lädt die Daten aus Firestore. Wird beim App-Start einmal abgewartet,
-  // bevor die Oberfläche erscheint.
+  // Änderung (Feedback "UI-Fehlermeldungen aus Repository"): 
+  // Vorher hat dieses Repository bei einem Schreibfehler direkt eine SnackBar angezeigt (import von flutter/material.dart und app_messenger.dart). Jetzt wird der Fehlertext nur noch hier abgelegt. 
+ 
+  final ValueNotifier<String?> lastError = ValueNotifier<String?>(null);
+
+  // Lädt die Daten aus Firestore. Wird beim App-Start einmal abgewartet, bevor die Oberfläche erscheint.
+
   Future<void> load() async {
     if (_loaded) return;
 
@@ -82,22 +82,30 @@ class DatabaseRepository {
     _loaded = true;
   }
 
-  // Schreibt im Hintergrund nach Firestore, ohne dass die App darauf warten
-  // muss. Schlägt der Schreibvorgang fehl (z.B. keine Internetverbindung),
-  // bleibt die bereits lokal geänderte Ansicht bestehen - die Nutzerin/der
-  // Nutzer wird aber per SnackBar informiert, statt dass der Fehler nur in
-  // der Konsole landet und die Änderung unbemerkt verloren geht.
-  void _write(Future<void> Function() write) {
-    write().catchError((Object error) {
+  // Änderung (Feedback "Änderungen werden lokal vor Firebase-Erfolg übernommen, kein
+  // Rollback bei Schreibfehlern"): 
+  // _write wartet den Schreibvorgang jetzt ab und meldet per Rückgabewert, ob er erfolgreich war.
+
+  Future<bool> _write(Future<void> Function() write) async {
+    try {
+      await write();
+      return true;
+    } catch (error) {
       debugPrint('Firestore-Schreibvorgang fehlgeschlagen: $error');
-      appMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Speichern fehlgeschlagen. Bitte Internetverbindung prüfen.',
-          ),
-        ),
-      );
-    });
+      lastError.value =
+          'Speichern fehlgeschlagen. Bitte Internetverbindung prüfen.';
+      return false;
+    }
+  }
+
+  // Änderung (Feedback "verknüpfte Updates nicht atomar"): 
+  // Hilfsmethode für Löschvorgänge, die mehrere Dokumente gleichzeitig betreffen (z.B. eine Band löschen und dabei die bandIds bei jedem ihrer Musiker/Alben/Songs entfernen). 
+  // Alle Schreibvorgänge werden in einem WriteBatch gesammelt und in einem Schritt committet.
+
+  Future<bool> _commitBatch(void Function(WriteBatch batch) build) {
+    final WriteBatch batch = _db.batch();
+    build(batch);
+    return _write(() => batch.commit());
   }
 
   // ---------- Namen für die Auswahl-Listen im Formular ----------
@@ -126,8 +134,8 @@ class DatabaseRepository {
     }
   }
 
-  // Name, Icon und Beschreibungstexte stehen bei CategoryKind selbst.
-  // Das Repository steuert nur die aktuellen Einträge bei.
+  // Name, Icon und Beschreibungstexte stehen bei CategoryKind selbst. Das Repository steuert nur die aktuellen Einträge bei.
+
   DatabaseCategory categoryOf(CategoryKind kind) =>
       DatabaseCategory(kind: kind, entries: entriesOf(kind));
 
@@ -179,8 +187,7 @@ class DatabaseRepository {
   }
 
   // ---------- Verknüpfungen: Suche per Titel ----------
-  // Wird gebraucht, wenn eine Detailseite eine Verknüpfung aus einem
-  // Auswahlfeld (Namen) in einen Eintrag auflöst.
+  // Wird gebraucht, wenn eine Detailseite eine Verknüpfung aus einem Auswahlfeld (Namen) in einen Eintrag auflöst.
 
   Band? bandByTitle(String title) {
     for (final Band band in bands) {
@@ -225,10 +232,12 @@ class DatabaseRepository {
   }
 
   // Liefert die verknüpften Einträge zu einem Eintrag
+
   List<RelatedSection> relatedFor(DatabaseItem item) {
     final List<RelatedSection> sections = [];
 
     // Band: ihre Musiker, Alben und Songs
+
     if (item is Band) {
       _addSection(sections, 'Musiker',
           musicians.where((m) => m.bandIds.contains(item.id)));
@@ -240,12 +249,14 @@ class DatabaseRepository {
     }
 
     // Musiker: alle Bands, in denen er spielt
+
     if (item is Musician) {
       _addSection(sections, item.bandLabel, _bandsByIds(item.bandIds));
       return sections;
     }
 
     // Album: beteiligte Bands und die Songs des Albums
+
     if (item is Album) {
       final List<Band> gefundeneBands = _bandsByIds(item.bandIds);
 
@@ -259,6 +270,7 @@ class DatabaseRepository {
     }
 
     // Song: Beteiligte Bands und zugehörige Alben
+
     if (item is Song) {
       final List<Band> gefundeneBands = _bandsByIds(item.bandIds);
       final List<Album> gefundeneAlben =
@@ -276,6 +288,7 @@ class DatabaseRepository {
     }
 
     // Genre: alle Bands mit diesem Genre
+
     if (item is Genre) {
       _addSection(sections, 'Bands mit diesem Genre',
           bands.where((b) => b.genreIds.contains(item.id)));
@@ -283,6 +296,7 @@ class DatabaseRepository {
     }
 
     // Rolle: alle Musiker mit dieser Rolle
+
     if (item is Role) {
       _addSection(sections, 'Musiker mit dieser Rolle',
           musicians.where((m) => m.roleIds.contains(item.id)));
@@ -293,6 +307,7 @@ class DatabaseRepository {
   }
 
  // Hängt einen Abschnitt an, aber nur wenn es überhaupt Einträge gibt. Wurde mit AI ergänzt, ich konnte selbst keine passende Lösung finden.
+
   void _addSection(
     List<RelatedSection> sections,
     String label,
@@ -305,6 +320,7 @@ class DatabaseRepository {
   }
 
   // Sucht zu jeder ID die Band. IDs ohne Treffer werden übersprungen.
+
   List<Band> _bandsByIds(List<String> ids) {
     final List<Band> gefunden = [];
     for (final String id in ids) {
@@ -341,14 +357,15 @@ class DatabaseRepository {
       ];
 
   // ---------- Neue Einträge speichern ----------
+  // Änderung nach feedback: alle addX-Methoden sind jetzt async und warten den Schreibvorgang ab, bevor der neue Eintrag der lokalen Liste hinzugefügt wird. Leider habe ich für diese Änderung AI unterstüzung benötigt.
 
-  void addBand({
+  Future<void> addBand({
     required String title,
     List<String> genreIds = const [],
     String founded = '',
     String origin = '',
     String descriptionText = '',
-  }) {
+  }) async {
     final doc = _db.collection('bands').doc();
     final Band band = Band(
       id: doc.id,
@@ -358,18 +375,19 @@ class DatabaseRepository {
       origin: origin,
       descriptionText: descriptionText,
     );
-    bands.add(band);
-    _write(() => doc.set(band.toMap()));
+    if (await _write(() => doc.set(band.toMap()))) {
+      bands.add(band);
+    }
   }
 
-  void addMusician({
+  Future<void> addMusician({
     required String firstName,
     required String lastName,
     String dateOfBirth = '',
     List<String> bandIds = const [],
     List<String> roleIds = const [],
     String descriptionText = '',
-  }) {
+  }) async {
     final doc = _db.collection('musicians').doc();
     final Musician musician = Musician(
       id: doc.id,
@@ -380,17 +398,18 @@ class DatabaseRepository {
       roleIds: roleIds,
       descriptionText: descriptionText,
     );
-    musicians.add(musician);
-    _write(() => doc.set(musician.toMap()));
+    if (await _write(() => doc.set(musician.toMap()))) {
+      musicians.add(musician);
+    }
   }
 
-  void addAlbum({
+  Future<void> addAlbum({
     required String title,
     List<String> bandIds = const [],
     List<String> genreIds = const [],
     String releaseDate = '',
     String descriptionText = '',
-  }) {
+  }) async {
     final doc = _db.collection('albums').doc();
     final Album album = Album(
       id: doc.id,
@@ -400,18 +419,19 @@ class DatabaseRepository {
       releaseDate: releaseDate,
       descriptionText: descriptionText,
     );
-    albums.add(album);
-    _write(() => doc.set(album.toMap()));
+    if (await _write(() => doc.set(album.toMap()))) {
+      albums.add(album);
+    }
   }
 
-  void addSong({
+  Future<void> addSong({
     required String title,
     int durationSeconds = 0,
     List<String> albumIds = const [],
     List<String> bandIds = const [],
     String releaseDate = '',
     String descriptionText = '',
-  }) {
+  }) async {
     final doc = _db.collection('songs').doc();
     final Song song = Song(
       id: doc.id,
@@ -422,87 +442,157 @@ class DatabaseRepository {
       releaseDate: releaseDate,
       descriptionText: descriptionText,
     );
-    songs.add(song);
-    _write(() => doc.set(song.toMap()));
+    if (await _write(() => doc.set(song.toMap()))) {
+      songs.add(song);
+    }
   }
 
-  void addGenre({required String title, String descriptionText = ''}) {
+  Future<void> addGenre({required String title, String descriptionText = ''}) async {
     final doc = _db.collection('genres').doc();
     final Genre genre = Genre(
       id: doc.id,
       title: title,
       descriptionText: descriptionText,
     );
-    genres.add(genre);
-    _write(() => doc.set(genre.toMap()));
+    if (await _write(() => doc.set(genre.toMap()))) {
+      genres.add(genre);
+    }
   }
 
-  void addRole({required String title, String descriptionText = ''}) {
+  Future<void> addRole({required String title, String descriptionText = ''}) async {
     final doc = _db.collection('roles').doc();
     final Role role = Role(
       id: doc.id,
       title: title,
       descriptionText: descriptionText,
     );
-    roles.add(role);
-    _write(() => doc.set(role.toMap()));
+    if (await _write(() => doc.set(role.toMap()))) {
+      roles.add(role);
+    }
   }
 
  // ---------- Bestehende Einträge ändern ----------
+  // Änderung nach Feedback: analog zu den addX-Methoden auch hier zuerst schreiben und abwarten, die lokale Liste erst danach aktualisieren. 
 
-  void updateBand(Band band) {
-    final int index = bands.indexWhere((b) => b.id == band.id);
-    if (index == -1) return;
-    bands[index] = band;
-    _write(() => _db.collection('bands').doc(band.id).set(band.toMap()));
+  Future<void> updateBand(Band band) async {
+    if (!bands.any((b) => b.id == band.id)) return;
+    if (await _write(() => _db.collection('bands').doc(band.id).set(band.toMap()))) {
+      final int index = bands.indexWhere((b) => b.id == band.id);
+      if (index != -1) bands[index] = band;
+    }
   }
 
-  void updateMusician(Musician musician) {
-    final int index = musicians.indexWhere((m) => m.id == musician.id);
-    if (index == -1) return;
-    musicians[index] = musician;
-    _write(() =>
-        _db.collection('musicians').doc(musician.id).set(musician.toMap()));
+  Future<void> updateMusician(Musician musician) async {
+    if (!musicians.any((m) => m.id == musician.id)) return;
+    if (await _write(() =>
+        _db.collection('musicians').doc(musician.id).set(musician.toMap()))) {
+      final int index = musicians.indexWhere((m) => m.id == musician.id);
+      if (index != -1) musicians[index] = musician;
+    }
   }
 
-  void updateAlbum(Album album) {
-    final int index = albums.indexWhere((a) => a.id == album.id);
-    if (index == -1) return;
-    albums[index] = album;
-    _write(() => _db.collection('albums').doc(album.id).set(album.toMap()));
+  Future<void> updateAlbum(Album album) async {
+    if (!albums.any((a) => a.id == album.id)) return;
+    if (await _write(() => _db.collection('albums').doc(album.id).set(album.toMap()))) {
+      final int index = albums.indexWhere((a) => a.id == album.id);
+      if (index != -1) albums[index] = album;
+    }
   }
 
-  void updateSong(Song song) {
-    final int index = songs.indexWhere((s) => s.id == song.id);
-    if (index == -1) return;
-    songs[index] = song;
-    _write(() => _db.collection('songs').doc(song.id).set(song.toMap()));
+  Future<void> updateSong(Song song) async {
+    if (!songs.any((s) => s.id == song.id)) return;
+    if (await _write(() => _db.collection('songs').doc(song.id).set(song.toMap()))) {
+      final int index = songs.indexWhere((s) => s.id == song.id);
+      if (index != -1) songs[index] = song;
+    }
   }
 
-  void updateGenre(Genre genre) {
-    final int index = genres.indexWhere((g) => g.id == genre.id);
-    if (index == -1) return;
-    genres[index] = genre;
-    _write(() => _db.collection('genres').doc(genre.id).set(genre.toMap()));
+  Future<void> updateGenre(Genre genre) async {
+    if (!genres.any((g) => g.id == genre.id)) return;
+    if (await _write(() => _db.collection('genres').doc(genre.id).set(genre.toMap()))) {
+      final int index = genres.indexWhere((g) => g.id == genre.id);
+      if (index != -1) genres[index] = genre;
+    }
   }
 
-  void updateRole(Role role) {
-    final int index = roles.indexWhere((r) => r.id == role.id);
-    if (index == -1) return;
-    roles[index] = role;
-    _write(() => _db.collection('roles').doc(role.id).set(role.toMap()));
+  Future<void> updateRole(Role role) async {
+    if (!roles.any((r) => r.id == role.id)) return;
+    if (await _write(() => _db.collection('roles').doc(role.id).set(role.toMap()))) {
+      final int index = roles.indexWhere((r) => r.id == role.id);
+      if (index != -1) roles[index] = role;
+    }
   }
 
 // ---------- Verknüpfungen auf beiden Seiten ändern ----------
   // Eine Detailseite kann eine Verknüpfung zeigen, die als Feld beim jeweils anderen Eintrag gespeichert ist (z.B. zeigt eine Band ihre Songs, aber die Verknüpfung liegt in Song.bandIds). Ich hatte bei Tests diese inkonsistenz entdeckt. Um das sauber umzusetzten musste ich AI zur Hilfe nehmen.
+  //
+  // Änderung nach Feedback: alle diese Methoden sind jetzt async und warten die zugrundeliegende updateX()-Methode ab. 
+  // Reine Hilfsfunktionen ohne Seiteneffekt: liefern eine Kopie des Eintrags ohne die angegebene ID. Damit wird nun der atomare Zustand gewährt.
 
+  Musician _musicianWithoutBand(Musician m, String bandId) => Musician(
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        dateOfBirth: m.dateOfBirth,
+        descriptionText: m.descriptionText,
+        roleIds: m.roleIds,
+        bandIds: m.bandIds.where((id) => id != bandId).toList(),
+      );
 
-  void addBandToMusician(String musicianId, String bandId) {
+  Album _albumWithoutBand(Album a, String bandId) => Album(
+        id: a.id,
+        title: a.title,
+        genreIds: a.genreIds,
+        releaseDate: a.releaseDate,
+        descriptionText: a.descriptionText,
+        bandIds: a.bandIds.where((id) => id != bandId).toList(),
+      );
+
+  Song _songWithoutBand(Song s, String bandId) => Song(
+        id: s.id,
+        title: s.title,
+        durationSeconds: s.durationSeconds,
+        releaseDate: s.releaseDate,
+        descriptionText: s.descriptionText,
+        albumIds: s.albumIds,
+        bandIds: s.bandIds.where((id) => id != bandId).toList(),
+      );
+
+  Song _songWithoutAlbum(Song s, String albumId) => Song(
+        id: s.id,
+        title: s.title,
+        durationSeconds: s.durationSeconds,
+        releaseDate: s.releaseDate,
+        descriptionText: s.descriptionText,
+        bandIds: s.bandIds,
+        albumIds: s.albumIds.where((id) => id != albumId).toList(),
+      );
+
+  Band _bandWithoutGenre(Band b, String genreId) => Band(
+        id: b.id,
+        title: b.title,
+        origin: b.origin,
+        founded: b.founded,
+        descriptionText: b.descriptionText,
+        genreIds: b.genreIds.where((id) => id != genreId).toList(),
+      );
+
+  Musician _musicianWithoutRole(Musician m, String roleId) => Musician(
+        id: m.id,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        dateOfBirth: m.dateOfBirth,
+        descriptionText: m.descriptionText,
+        bandIds: m.bandIds,
+        roleIds: m.roleIds.where((id) => id != roleId).toList(),
+      );
+
+  Future<void> addBandToMusician(String musicianId, String bandId) async {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
     if (musician.bandIds.contains(bandId)) return;
 
-    updateMusician(Musician(
+    await updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
@@ -513,28 +603,20 @@ class DatabaseRepository {
     ));
   }
 
-  void removeBandFromMusician(String musicianId, String bandId) {
+  Future<void> removeBandFromMusician(String musicianId, String bandId) async {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
     if (!musician.bandIds.contains(bandId)) return;
 
-    updateMusician(Musician(
-      id: musician.id,
-      firstName: musician.firstName,
-      lastName: musician.lastName,
-      dateOfBirth: musician.dateOfBirth,
-      descriptionText: musician.descriptionText,
-      roleIds: musician.roleIds,
-      bandIds: musician.bandIds.where((id) => id != bandId).toList(),
-    ));
+    await updateMusician(_musicianWithoutBand(musician, bandId));
   }
 
-  void addBandToAlbum(String albumId, String bandId) {
+  Future<void> addBandToAlbum(String albumId, String bandId) async {
     final Album? album = albumById(albumId);
     if (album == null) return;
     if (album.bandIds.contains(bandId)) return;
 
-    updateAlbum(Album(
+    await updateAlbum(Album(
       id: album.id,
       title: album.title,
       genreIds: album.genreIds,
@@ -544,27 +626,20 @@ class DatabaseRepository {
     ));
   }
 
-  void removeBandFromAlbum(String albumId, String bandId) {
+  Future<void> removeBandFromAlbum(String albumId, String bandId) async {
     final Album? album = albumById(albumId);
     if (album == null) return;
     if (!album.bandIds.contains(bandId)) return;
 
-    updateAlbum(Album(
-      id: album.id,
-      title: album.title,
-      genreIds: album.genreIds,
-      releaseDate: album.releaseDate,
-      descriptionText: album.descriptionText,
-      bandIds: album.bandIds.where((id) => id != bandId).toList(),
-    ));
+    await updateAlbum(_albumWithoutBand(album, bandId));
   }
 
-  void addBandToSong(String songId, String bandId) {
+  Future<void> addBandToSong(String songId, String bandId) async {
     final Song? song = songById(songId);
     if (song == null) return;
     if (song.bandIds.contains(bandId)) return;
 
-    updateSong(Song(
+    await updateSong(Song(
       id: song.id,
       title: song.title,
       durationSeconds: song.durationSeconds,
@@ -575,28 +650,20 @@ class DatabaseRepository {
     ));
   }
 
-  void removeBandFromSong(String songId, String bandId) {
+  Future<void> removeBandFromSong(String songId, String bandId) async {
     final Song? song = songById(songId);
     if (song == null) return;
     if (!song.bandIds.contains(bandId)) return;
 
-    updateSong(Song(
-      id: song.id,
-      title: song.title,
-      durationSeconds: song.durationSeconds,
-      releaseDate: song.releaseDate,
-      descriptionText: song.descriptionText,
-      albumIds: song.albumIds,
-      bandIds: song.bandIds.where((id) => id != bandId).toList(),
-    ));
+    await updateSong(_songWithoutBand(song, bandId));
   }
 
-  void addAlbumToSong(String songId, String albumId) {
+  Future<void> addAlbumToSong(String songId, String albumId) async {
     final Song? song = songById(songId);
     if (song == null) return;
     if (song.albumIds.contains(albumId)) return;
 
-    updateSong(Song(
+    await updateSong(Song(
       id: song.id,
       title: song.title,
       durationSeconds: song.durationSeconds,
@@ -607,28 +674,20 @@ class DatabaseRepository {
     ));
   }
 
-  void removeAlbumFromSong(String songId, String albumId) {
+  Future<void> removeAlbumFromSong(String songId, String albumId) async {
     final Song? song = songById(songId);
     if (song == null) return;
     if (!song.albumIds.contains(albumId)) return;
 
-    updateSong(Song(
-      id: song.id,
-      title: song.title,
-      durationSeconds: song.durationSeconds,
-      releaseDate: song.releaseDate,
-      descriptionText: song.descriptionText,
-      bandIds: song.bandIds,
-      albumIds: song.albumIds.where((id) => id != albumId).toList(),
-    ));
+    await updateSong(_songWithoutAlbum(song, albumId));
   }
 
-  void addGenreToBand(String bandId, String genreId) {
+  Future<void> addGenreToBand(String bandId, String genreId) async {
     final Band? band = bandById(bandId);
     if (band == null) return;
     if (band.genreIds.contains(genreId)) return;
 
-    updateBand(Band(
+    await updateBand(Band(
       id: band.id,
       title: band.title,
       origin: band.origin,
@@ -638,27 +697,20 @@ class DatabaseRepository {
     ));
   }
 
-  void removeGenreFromBand(String bandId, String genreId) {
+  Future<void> removeGenreFromBand(String bandId, String genreId) async {
     final Band? band = bandById(bandId);
     if (band == null) return;
     if (!band.genreIds.contains(genreId)) return;
 
-    updateBand(Band(
-      id: band.id,
-      title: band.title,
-      origin: band.origin,
-      founded: band.founded,
-      descriptionText: band.descriptionText,
-      genreIds: band.genreIds.where((id) => id != genreId).toList(),
-    ));
+    await updateBand(_bandWithoutGenre(band, genreId));
   }
 
-  void addRoleToMusician(String musicianId, String roleId) {
+  Future<void> addRoleToMusician(String musicianId, String roleId) async {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
     if (musician.roleIds.contains(roleId)) return;
 
-    updateMusician(Musician(
+    await updateMusician(Musician(
       id: musician.id,
       firstName: musician.firstName,
       lastName: musician.lastName,
@@ -669,81 +721,139 @@ class DatabaseRepository {
     ));
   }
 
-  void removeRoleFromMusician(String musicianId, String roleId) {
+  Future<void> removeRoleFromMusician(String musicianId, String roleId) async {
     final Musician? musician = musicianById(musicianId);
     if (musician == null) return;
     if (!musician.roleIds.contains(roleId)) return;
 
-    updateMusician(Musician(
-      id: musician.id,
-      firstName: musician.firstName,
-      lastName: musician.lastName,
-      dateOfBirth: musician.dateOfBirth,
-      descriptionText: musician.descriptionText,
-      bandIds: musician.bandIds,
-      roleIds: musician.roleIds.where((id) => id != roleId).toList(),
-    ));
+    await updateMusician(_musicianWithoutRole(musician, roleId));
   }
 
   // ---------- Einträge löschen ----------
-  // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band bei jedem ihrer Musiker, Alben und Songs). 
+  // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band bei jedem ihrer Musiker, Alben und Songs).
+  //
+  // Änderung (Feedback "verknüpfte Updates nicht atomar" + "kein Rollback bei
+  // Schreibfehlern"): Bei Kaskaden werden jetzt alle betroffenen Dokumente in einem WriteBatch gesammelt und zusammen committet (siehe _commitBatch), und die lokalen Listen werden erst nach erfolgreichem Commit angepasst.
 
-  void deleteBand(String id) {
-    for (final Musician musician in [...musicians]) {
-      if (musician.bandIds.contains(id)) {
-        removeBandFromMusician(musician.id, id);
+  Future<void> deleteBand(String id) async {
+    final List<Musician> betroffeneMusiker = musicians
+        .where((m) => m.bandIds.contains(id))
+        .map((m) => _musicianWithoutBand(m, id))
+        .toList();
+    final List<Album> betroffeneAlben = albums
+        .where((a) => a.bandIds.contains(id))
+        .map((a) => _albumWithoutBand(a, id))
+        .toList();
+    final List<Song> betroffeneSongs = songs
+        .where((s) => s.bandIds.contains(id))
+        .map((s) => _songWithoutBand(s, id))
+        .toList();
+
+    final bool success = await _commitBatch((batch) {
+      for (final Musician m in betroffeneMusiker) {
+        batch.set(_db.collection('musicians').doc(m.id), m.toMap());
       }
-    }
-    for (final Album album in [...albums]) {
-      if (album.bandIds.contains(id)) removeBandFromAlbum(album.id, id);
-    }
-    for (final Song song in [...songs]) {
-      if (song.bandIds.contains(id)) removeBandFromSong(song.id, id);
-    }
+      for (final Album a in betroffeneAlben) {
+        batch.set(_db.collection('albums').doc(a.id), a.toMap());
+      }
+      for (final Song s in betroffeneSongs) {
+        batch.set(_db.collection('songs').doc(s.id), s.toMap());
+      }
+      batch.delete(_db.collection('bands').doc(id));
+    });
+    if (!success) return;
 
+    for (final Musician m in betroffeneMusiker) {
+      final int idx = musicians.indexWhere((x) => x.id == m.id);
+      if (idx != -1) musicians[idx] = m;
+    }
+    for (final Album a in betroffeneAlben) {
+      final int idx = albums.indexWhere((x) => x.id == a.id);
+      if (idx != -1) albums[idx] = a;
+    }
+    for (final Song s in betroffeneSongs) {
+      final int idx = songs.indexWhere((x) => x.id == s.id);
+      if (idx != -1) songs[idx] = s;
+    }
     bands.removeWhere((b) => b.id == id);
-    _write(() => _db.collection('bands').doc(id).delete());
   }
 
-  void deleteMusician(String id) {
-    musicians.removeWhere((m) => m.id == id);
-    _write(() => _db.collection('musicians').doc(id).delete());
-  }
-
-  void deleteAlbum(String id) {
-    for (final Song song in [...songs]) {
-      if (song.albumIds.contains(id)) removeAlbumFromSong(song.id, id);
+  Future<void> deleteMusician(String id) async {
+    if (await _write(() => _db.collection('musicians').doc(id).delete())) {
+      musicians.removeWhere((m) => m.id == id);
     }
-
-    albums.removeWhere((a) => a.id == id);
-    _write(() => _db.collection('albums').doc(id).delete());
   }
 
-  void deleteSong(String id) {
-    songs.removeWhere((s) => s.id == id);
-    _write(() => _db.collection('songs').doc(id).delete());
-  }
+  Future<void> deleteAlbum(String id) async {
+    final List<Song> betroffeneSongs = songs
+        .where((s) => s.albumIds.contains(id))
+        .map((s) => _songWithoutAlbum(s, id))
+        .toList();
 
-  void deleteGenre(String id) {
-    for (final Band band in [...bands]) {
-      if (band.genreIds.contains(id)) removeGenreFromBand(band.id, id);
-    }
-
-    genres.removeWhere((g) => g.id == id);
-    _write(() => _db.collection('genres').doc(id).delete());
-  }
-
-  void deleteRole(String id) {
-    for (final Musician musician in [...musicians]) {
-      if (musician.roleIds.contains(id)) {
-        removeRoleFromMusician(musician.id, id);
+    final bool success = await _commitBatch((batch) {
+      for (final Song s in betroffeneSongs) {
+        batch.set(_db.collection('songs').doc(s.id), s.toMap());
       }
-    }
+      batch.delete(_db.collection('albums').doc(id));
+    });
+    if (!success) return;
 
+    for (final Song s in betroffeneSongs) {
+      final int idx = songs.indexWhere((x) => x.id == s.id);
+      if (idx != -1) songs[idx] = s;
+    }
+    albums.removeWhere((a) => a.id == id);
+  }
+
+  Future<void> deleteSong(String id) async {
+    if (await _write(() => _db.collection('songs').doc(id).delete())) {
+      songs.removeWhere((s) => s.id == id);
+    }
+  }
+
+  Future<void> deleteGenre(String id) async {
+    final List<Band> betroffeneBands = bands
+        .where((b) => b.genreIds.contains(id))
+        .map((b) => _bandWithoutGenre(b, id))
+        .toList();
+
+    final bool success = await _commitBatch((batch) {
+      for (final Band b in betroffeneBands) {
+        batch.set(_db.collection('bands').doc(b.id), b.toMap());
+      }
+      batch.delete(_db.collection('genres').doc(id));
+    });
+    if (!success) return;
+
+    for (final Band b in betroffeneBands) {
+      final int idx = bands.indexWhere((x) => x.id == b.id);
+      if (idx != -1) bands[idx] = b;
+    }
+    genres.removeWhere((g) => g.id == id);
+  }
+
+  Future<void> deleteRole(String id) async {
+    final List<Musician> betroffeneMusiker = musicians
+        .where((m) => m.roleIds.contains(id))
+        .map((m) => _musicianWithoutRole(m, id))
+        .toList();
+
+    final bool success = await _commitBatch((batch) {
+      for (final Musician m in betroffeneMusiker) {
+        batch.set(_db.collection('musicians').doc(m.id), m.toMap());
+      }
+      batch.delete(_db.collection('roles').doc(id));
+    });
+    if (!success) return;
+
+    for (final Musician m in betroffeneMusiker) {
+      final int idx = musicians.indexWhere((x) => x.id == m.id);
+      if (idx != -1) musicians[idx] = m;
+    }
     roles.removeWhere((r) => r.id == id);
-    _write(() => _db.collection('roles').doc(id).delete());
   }
 }
 
 // Ein Tipp von einem Kollegen der Flutter beruflich nutzt. Antelle von DatabaseRepository.instance kan einfach nur der Term repo verwendet werden. Vereinfacht das Arbeiten im Code.
+
 final DatabaseRepository repo = DatabaseRepository.instance;

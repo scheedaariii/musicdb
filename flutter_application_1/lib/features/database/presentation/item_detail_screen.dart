@@ -52,11 +52,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   bool _populating = false;
 
+  // Änderung (Feedback "keine WriteSperren"): wird während eines laufenden Speicher- oder Löschvorgangs auf true gesetzt und sperrt so lange die Speichern-/Bearbeiten-/ Löschen-Buttons. Verhindert doppeltes auslösen.
+
+  bool _saving = false;
+
   // Der aktuelle Stand des Eintrags. Wird nach dem Speichern neu aus dem Repository geholt, damit die Seite sofort den neuen Stand zeigt.
+
   late DatabaseItem _item = widget.item;
 
-  // Eingabefelder für den Bearbeitungsmodus
-  // Name/Titel: bei Band, Album, Song, Genre und Rolle
+  // Eingabefelder für den Bearbeitungsmodus - Name/Titel: bei Band, Album, Song, Genre und Rolle
+
   final TextEditingController _titleField = TextEditingController();
   // Vor- und Nachname: nur bei Musikern 
   final TextEditingController _firstName = TextEditingController();
@@ -69,12 +74,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   String _dateValue = '';
 
   // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert). 
+
   final List<String> _genreSelection = [];
   final List<String> _bandSelection = [];
   final List<String> _roleSelection = [];
   final List<String> _albumSelection = [];
 
   // Verknüpfungen, die eigentlich beim jeweils anderen Eintrag gespeichert sind (z.B. die Musiker einer Band liegen in Musician.bandIds)
+
   final List<String> _relatedBandSelection = [];
   final List<String> _relatedMusicianSelection = [];
   final List<String> _relatedAlbumSelection = [];
@@ -244,34 +251,37 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _delete();
   }
 
-  // Löscht den Eintrag überall, auch bei jedem anderen Eintrag, der auf ihn
-  // verweist (siehe die delete-Methoden im Repository). Danach gibt es
-  // nichts mehr anzuzeigen, also wird die Seite direkt geschlossen.
-  void _delete() {
+  // Löscht den Eintrag überall, auch bei jedem anderen Eintrag, der auf ihn verweist (siehe die delete-Methoden im Repository). Danach gibt es nichts mehr anzuzeigen, also wird die Seite direkt geschlossen.
+  // Änderung nach feedback: async, wartet jetzt die jeweilige repo.deleteX()-Methode ab (die selbst erst nach erfolgreichem Firestore-Schreibvorgang die lokalen Listen ändert) und sperrt währenddessen über _saving die Buttons. Die Seite wird erst nach Abschluss geschlossen.
+
+  Future<void> _delete() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+
     final DatabaseItem item = _item;
 
     if (item is Band) {
-      repo.deleteBand(item.id);
+      await repo.deleteBand(item.id);
     } else if (item is Musician) {
-      repo.deleteMusician(item.id);
+      await repo.deleteMusician(item.id);
     } else if (item is Album) {
-      repo.deleteAlbum(item.id);
+      await repo.deleteAlbum(item.id);
     } else if (item is Song) {
-      repo.deleteSong(item.id);
+      await repo.deleteSong(item.id);
     } else if (item is Genre) {
-      repo.deleteGenre(item.id);
+      await repo.deleteGenre(item.id);
     } else if (item is Role) {
-      repo.deleteRole(item.id);
+      await repo.deleteRole(item.id);
     }
 
+    if (!mounted) return;
     Navigator.pop(context);
   }
 
   // ---------- Speichern ----------
 
-  // Prüft Pflichtfelder, bevor gespeichert wird: der Name (bzw. Vor- und
-  // Nachname bei Musikern) darf nie leer sein, und das Geburtsdatum bei
-  // Musikern darf auch beim Bearbeiten nicht entfernt werden.
+  // Prüft Pflichtfelder, bevor gespeichert wird: der Name (bzw. Vor- und Nachname bei Musikern) darf nie leer sein, und das Geburtsdatum bei Musikern darf auch beim Bearbeiten nicht entfernt werden.
+
   void _onSave() {
     if (_item is Musician) {
       if (_firstName.text.trim().isEmpty || _lastName.text.trim().isEmpty) {
@@ -295,11 +305,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     _save();
   }
 
-  // Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben
-  // Kategorie vorkommt. Verhindert vor allem verwirrende Duplikate (z.B.
-  // zwei Bands mit exakt demselben Namen) - dieselbe Prüfung samt Meldung
-  // nutzt auch der Erfassungs-Screen beim Neuanlegen (siehe
-  // add_data_screen.dart, _isUnique).
+  // Änderung nach feeback: _onSave bleibt synchron (die Prüfungen oben brauchen kein await), ruft aber _save() jetzt "fire-and-forget" auf - _save selbst kümmert sich über _saving um die
+  // Button-Sperre und wartet den kompletten Speichervorgang inkl. aller Verknüpfungen ab. Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben Kategorie vorkommt. 
+
   bool _isNameUnique() {
     final DatabaseItem item = _item;
 
@@ -370,11 +378,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     );
   }
 
-  void _save() {
+  // Änderung (Feedback "kein Rollback bei Schreibfehlern" + "keine WriteSperren"): _save ist jetzt async und wartet jede repo.updateX()/repo.addXToY()-Aufruf ab.
+  // Während des gesamten Vorgangs sperrt _saving den Speichern-Button.
+
+  Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+
     final DatabaseItem item = _item;
 
     if (item is Band) {
-      repo.updateBand(Band(
+      await repo.updateBand(Band(
         id: item.id,
         title: _titleField.text.trim(),
         genreIds: repo.idsForGenreNames(_genreSelection),
@@ -383,7 +397,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         descriptionText: _description.text.trim(),
       ));
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.musicians
             .where((m) => m.bandIds.contains(item.id))
             .map((m) => m.title)
@@ -391,17 +405,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedMusicianSelection,
         onAdd: (title) {
           final Musician? musician = repo.musicianByTitle(title);
-          if (musician != null) repo.addBandToMusician(musician.id, item.id);
+          return musician == null
+              ? null
+              : repo.addBandToMusician(musician.id, item.id);
         },
         onRemove: (title) {
           final Musician? musician = repo.musicianByTitle(title);
-          if (musician != null) {
-            repo.removeBandFromMusician(musician.id, item.id);
-          }
+          return musician == null
+              ? null
+              : repo.removeBandFromMusician(musician.id, item.id);
         },
       );
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.albums
             .where((a) => a.bandIds.contains(item.id))
             .map((a) => a.title)
@@ -409,15 +425,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedAlbumSelection,
         onAdd: (title) {
           final Album? album = repo.albumByTitle(title);
-          if (album != null) repo.addBandToAlbum(album.id, item.id);
+          return album == null
+              ? null
+              : repo.addBandToAlbum(album.id, item.id);
         },
         onRemove: (title) {
           final Album? album = repo.albumByTitle(title);
-          if (album != null) repo.removeBandFromAlbum(album.id, item.id);
+          return album == null
+              ? null
+              : repo.removeBandFromAlbum(album.id, item.id);
         },
       );
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.songs
             .where((s) => s.bandIds.contains(item.id))
             .map((s) => s.title)
@@ -425,17 +445,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedSongSelection,
         onAdd: (title) {
           final Song? song = repo.songByTitle(title);
-          if (song != null) repo.addBandToSong(song.id, item.id);
+          return song == null ? null : repo.addBandToSong(song.id, item.id);
         },
         onRemove: (title) {
           final Song? song = repo.songByTitle(title);
-          if (song != null) repo.removeBandFromSong(song.id, item.id);
+          return song == null
+              ? null
+              : repo.removeBandFromSong(song.id, item.id);
         },
       );
 
       _item = repo.bandById(item.id) ?? item;
     } else if (item is Musician) {
-      repo.updateMusician(Musician(
+      await repo.updateMusician(Musician(
         id: item.id,
         firstName: _firstName.text.trim(),
         lastName: _lastName.text.trim(),
@@ -446,7 +468,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ));
       _item = repo.musicianById(item.id) ?? item;
     } else if (item is Album) {
-      repo.updateAlbum(Album(
+      await repo.updateAlbum(Album(
         id: item.id,
         title: _titleField.text.trim(),
         bandIds: repo.idsForBandNames(_bandSelection),
@@ -455,7 +477,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         descriptionText: _description.text.trim(),
       ));
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.songs
             .where((s) => s.albumIds.contains(item.id))
             .map((s) => s.title)
@@ -463,17 +485,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedSongSelection,
         onAdd: (title) {
           final Song? song = repo.songByTitle(title);
-          if (song != null) repo.addAlbumToSong(song.id, item.id);
+          return song == null ? null : repo.addAlbumToSong(song.id, item.id);
         },
         onRemove: (title) {
           final Song? song = repo.songByTitle(title);
-          if (song != null) repo.removeAlbumFromSong(song.id, item.id);
+          return song == null
+              ? null
+              : repo.removeAlbumFromSong(song.id, item.id);
         },
       );
 
       _item = repo.albumById(item.id) ?? item;
     } else if (item is Song) {
-      repo.updateSong(Song(
+      await repo.updateSong(Song(
         id: item.id,
         title: _titleField.text.trim(),
         durationSeconds: int.tryParse(_durationSeconds.text.trim()) ?? 0,
@@ -484,13 +508,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ));
       _item = repo.songById(item.id) ?? item;
     } else if (item is Genre) {
-      repo.updateGenre(Genre(
+      await repo.updateGenre(Genre(
         id: item.id,
         title: _titleField.text.trim(),
         descriptionText: _description.text.trim(),
       ));
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.bands
             .where((b) => b.genreIds.contains(item.id))
             .map((b) => b.title)
@@ -498,23 +522,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedBandSelection,
         onAdd: (title) {
           final Band? band = repo.bandByTitle(title);
-          if (band != null) repo.addGenreToBand(band.id, item.id);
+          return band == null ? null : repo.addGenreToBand(band.id, item.id);
         },
         onRemove: (title) {
           final Band? band = repo.bandByTitle(title);
-          if (band != null) repo.removeGenreFromBand(band.id, item.id);
+          return band == null
+              ? null
+              : repo.removeGenreFromBand(band.id, item.id);
         },
       );
 
       _item = repo.genreById(item.id) ?? item;
     } else if (item is Role) {
-      repo.updateRole(Role(
+      await repo.updateRole(Role(
         id: item.id,
         title: _titleField.text.trim(),
         descriptionText: _description.text.trim(),
       ));
 
-      _syncReverse(
+      await _syncReverse(
         before: repo.musicians
             .where((m) => m.roleIds.contains(item.id))
             .map((m) => m.title)
@@ -522,43 +548,55 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedMusicianSelection,
         onAdd: (title) {
           final Musician? musician = repo.musicianByTitle(title);
-          if (musician != null) {
-            repo.addRoleToMusician(musician.id, item.id);
-          }
+          return musician == null
+              ? null
+              : repo.addRoleToMusician(musician.id, item.id);
         },
         onRemove: (title) {
           final Musician? musician = repo.musicianByTitle(title);
-          if (musician != null) {
-            repo.removeRoleFromMusician(musician.id, item.id);
-          }
+          return musician == null
+              ? null
+              : repo.removeRoleFromMusician(musician.id, item.id);
         },
       );
 
       _item = repo.roleById(item.id) ?? item;
     }
 
+    if (!mounted) return;
     setState(() {
       _editing = false;
       _dirty = false;
+      _saving = false;
     });
   }
 
-  // Vergleicht die ursprüngliche mit der aktuell gewählten Auswahl und
-  // ruft für jede Änderung die passende Funktion auf.
-  void _syncReverse({
+  // Vergleicht die ursprüngliche mit der aktuell gewählten Auswahl und ruft für jede Änderung die passende Funktion auf.
+  // Änderung nach Feedback: async - onAdd/onRemove liefern jetzt ein Future<void>? zurück und alle ausgelösten Schreibvorgänge werden hier gesammelt und gemeinsam abgewartet.
+
+  Future<void> _syncReverse({
     required Set<String> before,
     required List<String> after,
-    required void Function(String title) onAdd,
-    required void Function(String title) onRemove,
-  }) {
+    required Future<void>? Function(String title) onAdd,
+    required Future<void>? Function(String title) onRemove,
+  }) async {
     final Set<String> afterSet = after.toSet();
+    final List<Future<void>> laufendeSchreibvorgaenge = [];
 
     for (final String title in afterSet) {
-      if (!before.contains(title)) onAdd(title);
+      if (!before.contains(title)) {
+        final Future<void>? future = onAdd(title);
+        if (future != null) laufendeSchreibvorgaenge.add(future);
+      }
     }
     for (final String title in before) {
-      if (!afterSet.contains(title)) onRemove(title);
+      if (!afterSet.contains(title)) {
+        final Future<void>? future = onRemove(title);
+        if (future != null) laufendeSchreibvorgaenge.add(future);
+      }
     }
+
+    await Future.wait(laufendeSchreibvorgaenge);
   }
 
   Future<void> _pickDate() async {
@@ -896,9 +934,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header mit Icon und Name, unabhängig vom Bearbeitungsmodus.
-            // Bei Musikern zeigt der Header das Alter statt der Bands, da
-            // die Bands bereits in der eigenen Liste weiter unten stehen.
+            // Header mit Icon und Name, unabhängig vom Bearbeitungsmodus. Bei Musikern zeigt der Header das Alter statt der Bands, da die Bands bereits in der eigenen Liste weiter unten stehen.
             DetailHeader(
               icon: item.icon,
               title: item.title,
@@ -960,11 +996,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ),
 
       // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird.
+      //
+      // Änderung (Feedback "keine WriteSperren"): onPressed ist während _saving jeweils null, damit während eines laufenden Speicher-/Löschvorgangs kein zweiter Klick einen weiteren Schreibvorgang auslösen kann.
 
       floatingActionButton: _editing
           ? (_dirty
               ? FloatingActionButton.extended(
-                  onPressed: _onSave,
+                  onPressed: _saving ? null : _onSave,
                   icon: const Icon(Icons.save_outlined),
                   label: const Text('Speichern'),
                   shape: const StadiumBorder(),
@@ -983,7 +1021,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const SizedBox(width: 16),
                 FloatingActionButton.extended(
                   heroTag: 'loeschen',
-                  onPressed: _confirmDelete,
+                  onPressed: _saving ? null : _confirmDelete,
                   icon: const Icon(Icons.delete_outline),
                   label: const Text('Löschen'),
                   shape: const StadiumBorder(),

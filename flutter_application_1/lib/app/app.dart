@@ -6,8 +6,36 @@ import 'app_colors.dart';
 import 'app_messenger.dart';
 import '../features/database/data/database_repository.dart';
 
-class App extends StatelessWidget {
+// Änderung (Feedback "UI-Fehlermeldungen aus Repository"): Das Repository zeigt Fehler nicht mehr selbst als SnackBar an, sondern legt den Fehlertext nur in repo.lastError ab.
+// die UI-Anzeige passiert also nur noch hier, nicht mehr in der Datenschicht.
+
+class App extends StatefulWidget {
   const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  @override
+  void initState() {
+    super.initState();
+    repo.lastError.addListener(_onError);
+  }
+
+  @override
+  void dispose() {
+    repo.lastError.removeListener(_onError);
+    super.dispose();
+  }
+
+  void _onError() {
+    final String? text = repo.lastError.value;
+    if (text == null) return;
+    appMessengerKey.currentState?.showSnackBar(SnackBar(content: Text(text)));
+    // Zurücksetzen, damit dieselbe Meldung nicht durch einen Rebuild erneut ausgelöst wird.
+    repo.lastError.value = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,14 +47,17 @@ class App extends StatelessWidget {
       // Globales Theme mit der definierten Farbpalette:
       // Mit coolors.co erstelltes Farbschema:
       // https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
+
       theme: ThemeData(
         // Hauptfarbe
         primaryColor: AppColors.darkBlue,
 
         // App Hintergrund
+
         scaffoldBackgroundColor: AppColors.background,
 
         // AppBar Design
+
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.darkBlue,
           foregroundColor: AppColors.white,
@@ -45,10 +76,11 @@ class App extends StatelessWidget {
         ),
 
         // Farbe für Datenkarten (weisse boxen)
+
         cardColor: AppColors.white,
 
-        // Der runde Plus-Button. Steht hier im Theme, damit ihn nicht
-        // jeder Screen einzeln einfärben muss.
+        // Der runde Plus-Button. Steht hier im Theme, damit ihn nicht jeder Screen einzeln einfärben muss.
+
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.darkBlue,
@@ -56,6 +88,7 @@ class App extends StatelessWidget {
         ),
 
         // Farbschema Allg.
+
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: AppColors.darkBlue,
           secondary: AppColors.gold,
@@ -63,13 +96,14 @@ class App extends StatelessWidget {
       ),
 
       // Startseite wartet zuerst auf die Daten aus Firestore
+
       home: const _StartupScreen(),
     );
   }
 }
 
 
-// Read: Erstes Laden der Datenbank aus Firestore
+// Read: Erstes Laden der Datenbank aus Firestore 
 // Holt beim Start alle Sammlungen aus Firestore. _StartupScreen wartet darauf und zeigt einen ladescreen wen das länger dauert.
 // Fehlermeldung bei laden Fehlern. Beides konnte nur mit AI getriebenen Tests nachgewiesen werden bisher.
 
@@ -103,6 +137,7 @@ class _StartupScreenState extends State<_StartupScreen> {
 }
 
 // Einfache, zum Design passende Ladeanzeige
+
 class _LoadingScreen extends StatelessWidget {
   const _LoadingScreen();
 
@@ -130,6 +165,7 @@ class _LoadingScreen extends StatelessWidget {
 }
 
 // Wird angezeigt, wenn die Datenbank nicht geladen werden konnte. Verhindert, dass die App unbemerkt mit leeren Daten weiterläuft.
+
 class _LoadErrorScreen extends StatelessWidget {
   const _LoadErrorScreen();
 

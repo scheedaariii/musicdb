@@ -526,7 +526,9 @@ class FormDateField extends StatelessWidget {
 
 // Der Speichern-Button am Ende des Formulars
 class SaveButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  // Änderung (Feedback "keine WriteSperren"): SaveButton.onPressed auf VoidCallback? umgestellt, damit er während _saving deaktiviert werden kann.
+  
+  final VoidCallback? onPressed;
 
   const SaveButton({super.key, required this.onPressed});
 

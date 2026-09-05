@@ -33,3 +33,6 @@ Das Datumsformat ist akuell Jahr/Monat/Tag -> zu Tag/Monat/Jahr ändern
 Platzhalter Texte vollständig ersetztn.
 Bug beheben: Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird und der speicher Button somit aktiv wird.
 
+Finale Abgabe
+
+Zu fixen: Die Zähler auf der Database-Übersichtsseite aktualisieren sich nicht automatisch beim Zurücknavigieren (nur nach App-Neustart korrekt) — das ist ein vorbestehendes UI-Verhalten (database_overview_screen.dart baut sich nicht bei Rückkehr neu auf) und keine Regression durch diese Änderungen. Falls gewünscht, kann ich das als separate Verbesserung angehen.
