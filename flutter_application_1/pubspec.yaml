@@ -38,6 +38,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^4.11.0
   cloud_firestore: ^6.6.0
+  # Für den Login/Registrieren-Bereich (Teil 3: Authentifizierung)
+  firebase_auth: ^6.1.1
+  # Eigenständig gewähltes Package (Teil 6): speichert einfache Werte
+  # dauerhaft auf dem Gerät. Wird für das "Welcome-Screen schon gesehen"-
+  # Merkmal gebraucht, siehe onboarding_repository.dart.
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:
@@ -49,26 +55,49 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
+
+# Launcher Icon (Store-Ready-Zustand): eigenes Icon statt des Flutter-
+# Standard-Icons. Erzeugung mit: dart run flutter_launcher_icons
+# Für Android 8+ (adaptive Icons) getrennt Hintergrund/Vordergrund, damit
+# das Symbol nicht vom runden/eckigen Zuschnitt abgeschnitten wird.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#242F40"
+  adaptive_icon_foreground: "assets/icon/icon_foreground.png"
+
+# Splash Screen (Store-Ready-Zustand): eigener Ladebildschirm statt des
+# weissen Flutter-Standard-Screens. Erzeugung mit:
+# dart run flutter_native_splash:create
+# Ab Android 12 zeigt das Betriebssystem den Splash selbst an und erlaubt
+# dort nur ein kleines, einfaches Icon (wie das Launcher-Icon) statt eines
+# ganzen Logos mit Schriftzug - darum dort nur das Balken-Symbol, auf
+# älteren Android-Versionen und iOS bleibt das komplette Logo.
+flutter_native_splash:
+  color: "#242F40"
+  image: assets/images/musicdb_logo_gold.png
+  android_12:
+    image: assets/icon/icon_foreground.png
+    color: "#242F40"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-# Eigene Assets definieren umd sie in der App zu verwenden. Aktuell nur das App Logo
 flutter:
-  
- 
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  assets:
-    - assets/images/logo.png
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # Aktuell keine Assets, die die App zur Laufzeit lädt (die Bilder unter
+  # assets/icon/ und assets/images/ sind nur Quellen für Launcher-Icon und
+  # Splash-Screen, siehe flutter_launcher_icons/flutter_native_splash oben).
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

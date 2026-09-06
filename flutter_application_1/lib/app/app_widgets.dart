@@ -19,6 +19,39 @@ BoxDecoration appCardDecoration({double radius = 10}) {
   );
 }
 
+// Zeigt einen einfachen Hinweis-Dialog mit OK-Button. Vorher stand genau
+// dieser Dialog als _showMessage() einzeln in add_data_screen.dart und
+// item_detail_screen.dart, jetzt auch im Login/Registrieren-Bereich
+// gebraucht - darum hierher gezogen, damit es nicht ein drittes Mal
+// kopiert werden muss.
+void showAppMessage(BuildContext context, String text) {
+  showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: AppColors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      content: Text(
+        text,
+        style: const TextStyle(fontSize: 15, color: AppColors.text),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            'OK',
+            style: TextStyle(
+              color: AppColors.darkBlue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 // Weisse Karte mit reinem Fliesstext, z.B. der Hinweistext über einer Liste.
 class TextCard extends StatelessWidget {
   final String text;

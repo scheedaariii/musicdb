@@ -1,12 +1,13 @@
-// database_repository.dart
 // Zuständig für die Firebase-Verknüpfung und das Management der Daten.
 // Die Listen werden beim Start über load() aus Firestore gefüllt. Neu erfasste Einträge landen erst in der jeweiligen Liste, nachdem das Schreiben nach Firestore erfolgreich war (siehe _write unten).
-//
 // Verknüpfungen zwischen Einträgen (z.B. welche Bands ein Musiker hat) werden ausschliesslich über IDs gespeichert (bandIds, genreIds, ...).
 //
 // Überarbeitung Feedback zwischenabgabe: Die add-/update-/delete- Methoden sind jetzt async und geben Future<void> zurück, damit die aufrufenden Screens den Abschluss des Schreibvorgangs abwarten können
-// Ausserdem kennt dieses Repository die Flutter-UI nicht mehr direkt (siehe lastError).
-// Die Änderungen Zur verbesserung des Kaskadenverhaltens und atomarität konnten nur durch AI unterstützung umgesetzt werden.
+// Ausserdem kennt dieses Repository die Flutter-UI nicht mehr direkt (siehe lastError). Die Änderungen Zur verbesserung des Kaskadenverhaltens und atomarität konnten nur durch AI unterstützung umgesetzt werden.
+//
+// Änderung (Datenzugehörigkeit): Jede Person hat jetzt ihre eigene, private Datenbank statt einer gemeinsamen für alle. load() lädt darum nur noch die Daten der eingeloggten Person, und reset() leert beim Abmelden alles wieder, damit das nächste Konto nicht die Daten des vorherigen sieht.
+//
+// Feedback Sehr grosses Repository: Experimentiert mit part / part of Direktiven. Das gibt einfach mehrere kleinere Files und veringert nicht wirklich den den content des database_repositories. Asonsten keinen sinnvollen Weg gefunden das File zu verkleiner.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -39,51 +40,71 @@ class DatabaseRepository {
 
   bool _loaded = false;
 
-  // Änderung (Feedback "UI-Fehlermeldungen aus Repository"): 
-  // Vorher hat dieses Repository bei einem Schreibfehler direkt eine SnackBar angezeigt (import von flutter/material.dart und app_messenger.dart). Jetzt wird der Fehlertext nur noch hier abgelegt. 
- 
+  // Wer gerade eingeloggt ist - bestimmt, wessen Daten geladen/gespeichert werden.
+  String? _uid;
+
+  // Änderung (Feedback "UI-Fehlermeldungen aus Repository"):
+  // Vorher hat dieses Repository bei einem Schreibfehler direkt eine SnackBar angezeigt (import von flutter/material.dart und app_messenger.dart). Jetzt wird der Fehlertext nur noch hier abgelegt.
+
   final ValueNotifier<String?> lastError = ValueNotifier<String?>(null);
+
+  // Liefert die Daten der eingeloggten Person statt einer für alle gemeinsamen Liste.
+  CollectionReference<Map<String, dynamic>> _collection(String name) =>
+      _db.collection('users').doc(_uid).collection(name);
 
   // Lädt die Daten aus Firestore. Wird beim App-Start einmal abgewartet, bevor die Oberfläche erscheint.
 
-  Future<void> load() async {
+  Future<void> load(String uid) async {
     if (_loaded) return;
+    _uid = uid;
 
     final QuerySnapshot<Map<String, dynamic>> bandsSnapshot =
-        await _db.collection('bands').get();
+        await _collection('bands').get();
     bands.addAll(
         bandsSnapshot.docs.map((doc) => Band.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> musiciansSnapshot =
-        await _db.collection('musicians').get();
+        await _collection('musicians').get();
     musicians.addAll(musiciansSnapshot.docs
         .map((doc) => Musician.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> albumsSnapshot =
-        await _db.collection('albums').get();
+        await _collection('albums').get();
     albums.addAll(
         albumsSnapshot.docs.map((doc) => Album.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> songsSnapshot =
-        await _db.collection('songs').get();
+        await _collection('songs').get();
     songs.addAll(
         songsSnapshot.docs.map((doc) => Song.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> genresSnapshot =
-        await _db.collection('genres').get();
+        await _collection('genres').get();
     genres.addAll(
         genresSnapshot.docs.map((doc) => Genre.fromMap(doc.id, doc.data())));
 
     final QuerySnapshot<Map<String, dynamic>> rolesSnapshot =
-        await _db.collection('roles').get();
+        await _collection('roles').get();
     roles.addAll(
         rolesSnapshot.docs.map((doc) => Role.fromMap(doc.id, doc.data())));
 
     _loaded = true;
   }
 
+  // Wird beim Abmelden aufgerufen, damit die nächste Person nicht kurz die Daten der vorherigen sieht.
+  void reset() {
+    bands.clear();
+    musicians.clear();
+    albums.clear();
+    songs.clear();
+    genres.clear();
+    roles.clear();
+    _uid = null;
+    _loaded = false;
+  }
+
   // Änderung (Feedback "Änderungen werden lokal vor Firebase-Erfolg übernommen, kein
-  // Rollback bei Schreibfehlern"): 
+  // Rollback bei Schreibfehlern"):
   // _write wartet den Schreibvorgang jetzt ab und meldet per Rückgabewert, ob er erfolgreich war.
 
   Future<bool> _write(Future<void> Function() write) async {
@@ -98,8 +119,8 @@ class DatabaseRepository {
     }
   }
 
-  // Änderung (Feedback "verknüpfte Updates nicht atomar"): 
-  // Hilfsmethode für Löschvorgänge, die mehrere Dokumente gleichzeitig betreffen (z.B. eine Band löschen und dabei die bandIds bei jedem ihrer Musiker/Alben/Songs entfernen). 
+  // Änderung (Feedback "verknüpfte Updates nicht atomar"):
+  // Hilfsmethode für Löschvorgänge, die mehrere Dokumente gleichzeitig betreffen (z.B. eine Band löschen und dabei die bandIds bei jedem ihrer Musiker/Alben/Songs entfernen).
   // Alle Schreibvorgänge werden in einem WriteBatch gesammelt und in einem Schritt committet.
 
   Future<bool> _commitBatch(void Function(WriteBatch batch) build) {
@@ -366,7 +387,7 @@ class DatabaseRepository {
     String origin = '',
     String descriptionText = '',
   }) async {
-    final doc = _db.collection('bands').doc();
+    final doc = _collection('bands').doc();
     final Band band = Band(
       id: doc.id,
       title: title,
@@ -388,7 +409,7 @@ class DatabaseRepository {
     List<String> roleIds = const [],
     String descriptionText = '',
   }) async {
-    final doc = _db.collection('musicians').doc();
+    final doc = _collection('musicians').doc();
     final Musician musician = Musician(
       id: doc.id,
       firstName: firstName,
@@ -410,7 +431,7 @@ class DatabaseRepository {
     String releaseDate = '',
     String descriptionText = '',
   }) async {
-    final doc = _db.collection('albums').doc();
+    final doc = _collection('albums').doc();
     final Album album = Album(
       id: doc.id,
       title: title,
@@ -432,7 +453,7 @@ class DatabaseRepository {
     String releaseDate = '',
     String descriptionText = '',
   }) async {
-    final doc = _db.collection('songs').doc();
+    final doc = _collection('songs').doc();
     final Song song = Song(
       id: doc.id,
       title: title,
@@ -448,7 +469,7 @@ class DatabaseRepository {
   }
 
   Future<void> addGenre({required String title, String descriptionText = ''}) async {
-    final doc = _db.collection('genres').doc();
+    final doc = _collection('genres').doc();
     final Genre genre = Genre(
       id: doc.id,
       title: title,
@@ -460,7 +481,7 @@ class DatabaseRepository {
   }
 
   Future<void> addRole({required String title, String descriptionText = ''}) async {
-    final doc = _db.collection('roles').doc();
+    final doc = _collection('roles').doc();
     final Role role = Role(
       id: doc.id,
       title: title,
@@ -472,11 +493,11 @@ class DatabaseRepository {
   }
 
  // ---------- Bestehende Einträge ändern ----------
-  // Änderung nach Feedback: analog zu den addX-Methoden auch hier zuerst schreiben und abwarten, die lokale Liste erst danach aktualisieren. 
+  // Änderung nach Feedback: analog zu den addX-Methoden auch hier zuerst schreiben und abwarten, die lokale Liste erst danach aktualisieren.
 
   Future<void> updateBand(Band band) async {
     if (!bands.any((b) => b.id == band.id)) return;
-    if (await _write(() => _db.collection('bands').doc(band.id).set(band.toMap()))) {
+    if (await _write(() => _collection('bands').doc(band.id).set(band.toMap()))) {
       final int index = bands.indexWhere((b) => b.id == band.id);
       if (index != -1) bands[index] = band;
     }
@@ -485,7 +506,7 @@ class DatabaseRepository {
   Future<void> updateMusician(Musician musician) async {
     if (!musicians.any((m) => m.id == musician.id)) return;
     if (await _write(() =>
-        _db.collection('musicians').doc(musician.id).set(musician.toMap()))) {
+        _collection('musicians').doc(musician.id).set(musician.toMap()))) {
       final int index = musicians.indexWhere((m) => m.id == musician.id);
       if (index != -1) musicians[index] = musician;
     }
@@ -493,7 +514,7 @@ class DatabaseRepository {
 
   Future<void> updateAlbum(Album album) async {
     if (!albums.any((a) => a.id == album.id)) return;
-    if (await _write(() => _db.collection('albums').doc(album.id).set(album.toMap()))) {
+    if (await _write(() => _collection('albums').doc(album.id).set(album.toMap()))) {
       final int index = albums.indexWhere((a) => a.id == album.id);
       if (index != -1) albums[index] = album;
     }
@@ -501,7 +522,7 @@ class DatabaseRepository {
 
   Future<void> updateSong(Song song) async {
     if (!songs.any((s) => s.id == song.id)) return;
-    if (await _write(() => _db.collection('songs').doc(song.id).set(song.toMap()))) {
+    if (await _write(() => _collection('songs').doc(song.id).set(song.toMap()))) {
       final int index = songs.indexWhere((s) => s.id == song.id);
       if (index != -1) songs[index] = song;
     }
@@ -509,7 +530,7 @@ class DatabaseRepository {
 
   Future<void> updateGenre(Genre genre) async {
     if (!genres.any((g) => g.id == genre.id)) return;
-    if (await _write(() => _db.collection('genres').doc(genre.id).set(genre.toMap()))) {
+    if (await _write(() => _collection('genres').doc(genre.id).set(genre.toMap()))) {
       final int index = genres.indexWhere((g) => g.id == genre.id);
       if (index != -1) genres[index] = genre;
     }
@@ -517,7 +538,7 @@ class DatabaseRepository {
 
   Future<void> updateRole(Role role) async {
     if (!roles.any((r) => r.id == role.id)) return;
-    if (await _write(() => _db.collection('roles').doc(role.id).set(role.toMap()))) {
+    if (await _write(() => _collection('roles').doc(role.id).set(role.toMap()))) {
       final int index = roles.indexWhere((r) => r.id == role.id);
       if (index != -1) roles[index] = role;
     }
@@ -526,7 +547,7 @@ class DatabaseRepository {
 // ---------- Verknüpfungen auf beiden Seiten ändern ----------
   // Eine Detailseite kann eine Verknüpfung zeigen, die als Feld beim jeweils anderen Eintrag gespeichert ist (z.B. zeigt eine Band ihre Songs, aber die Verknüpfung liegt in Song.bandIds). Ich hatte bei Tests diese inkonsistenz entdeckt. Um das sauber umzusetzten musste ich AI zur Hilfe nehmen.
   //
-  // Änderung nach Feedback: alle diese Methoden sind jetzt async und warten die zugrundeliegende updateX()-Methode ab. 
+  // Änderung nach Feedback: alle diese Methoden sind jetzt async und warten die zugrundeliegende updateX()-Methode ab.
   // Reine Hilfsfunktionen ohne Seiteneffekt: liefern eine Kopie des Eintrags ohne die angegebene ID. Damit wird nun der atomare Zustand gewährt.
 
   Musician _musicianWithoutBand(Musician m, String bandId) => Musician(
@@ -732,8 +753,8 @@ class DatabaseRepository {
   // ---------- Einträge löschen ----------
   // Ein Eintrag wird komplett entfernt, inklusive aller Stellen, an denen er bei einem anderen Eintrag verknüpft ist (z.B. eine gelöschte Band bei jedem ihrer Musiker, Alben und Songs).
   //
-  // Änderung (Feedback "verknüpfte Updates nicht atomar" + "kein Rollback bei
-  // Schreibfehlern"): Bei Kaskaden werden jetzt alle betroffenen Dokumente in einem WriteBatch gesammelt und zusammen committet (siehe _commitBatch), und die lokalen Listen werden erst nach erfolgreichem Commit angepasst.
+  // Änderung (Feedback "verknüpfte Updates nicht atomar" + "kein Rollback bei Schreibfehlern"): 
+  // Bei Kaskaden werden jetzt alle betroffenen Dokumente in einem WriteBatch gesammelt und zusammen committet (siehe _commitBatch), und die lokalen Listen werden erst nach erfolgreichem Commit angepasst.
 
   Future<void> deleteBand(String id) async {
     final List<Musician> betroffeneMusiker = musicians
@@ -751,15 +772,15 @@ class DatabaseRepository {
 
     final bool success = await _commitBatch((batch) {
       for (final Musician m in betroffeneMusiker) {
-        batch.set(_db.collection('musicians').doc(m.id), m.toMap());
+        batch.set(_collection('musicians').doc(m.id), m.toMap());
       }
       for (final Album a in betroffeneAlben) {
-        batch.set(_db.collection('albums').doc(a.id), a.toMap());
+        batch.set(_collection('albums').doc(a.id), a.toMap());
       }
       for (final Song s in betroffeneSongs) {
-        batch.set(_db.collection('songs').doc(s.id), s.toMap());
+        batch.set(_collection('songs').doc(s.id), s.toMap());
       }
-      batch.delete(_db.collection('bands').doc(id));
+      batch.delete(_collection('bands').doc(id));
     });
     if (!success) return;
 
@@ -779,7 +800,7 @@ class DatabaseRepository {
   }
 
   Future<void> deleteMusician(String id) async {
-    if (await _write(() => _db.collection('musicians').doc(id).delete())) {
+    if (await _write(() => _collection('musicians').doc(id).delete())) {
       musicians.removeWhere((m) => m.id == id);
     }
   }
@@ -792,9 +813,9 @@ class DatabaseRepository {
 
     final bool success = await _commitBatch((batch) {
       for (final Song s in betroffeneSongs) {
-        batch.set(_db.collection('songs').doc(s.id), s.toMap());
+        batch.set(_collection('songs').doc(s.id), s.toMap());
       }
-      batch.delete(_db.collection('albums').doc(id));
+      batch.delete(_collection('albums').doc(id));
     });
     if (!success) return;
 
@@ -806,7 +827,7 @@ class DatabaseRepository {
   }
 
   Future<void> deleteSong(String id) async {
-    if (await _write(() => _db.collection('songs').doc(id).delete())) {
+    if (await _write(() => _collection('songs').doc(id).delete())) {
       songs.removeWhere((s) => s.id == id);
     }
   }
@@ -819,9 +840,9 @@ class DatabaseRepository {
 
     final bool success = await _commitBatch((batch) {
       for (final Band b in betroffeneBands) {
-        batch.set(_db.collection('bands').doc(b.id), b.toMap());
+        batch.set(_collection('bands').doc(b.id), b.toMap());
       }
-      batch.delete(_db.collection('genres').doc(id));
+      batch.delete(_collection('genres').doc(id));
     });
     if (!success) return;
 
@@ -840,9 +861,9 @@ class DatabaseRepository {
 
     final bool success = await _commitBatch((batch) {
       for (final Musician m in betroffeneMusiker) {
-        batch.set(_db.collection('musicians').doc(m.id), m.toMap());
+        batch.set(_collection('musicians').doc(m.id), m.toMap());
       }
-      batch.delete(_db.collection('roles').doc(id));
+      batch.delete(_collection('roles').doc(id));
     });
     if (!success) return;
 

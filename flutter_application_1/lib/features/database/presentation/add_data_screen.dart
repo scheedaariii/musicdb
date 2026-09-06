@@ -6,7 +6,6 @@ import '../data/database_repository.dart';
 import '../domain/database_category.dart';
 import 'database_widgets.dart';
 import 'form_widgets.dart';
-import '../../../app/app_colors.dart';
 import '../../../app/app_widgets.dart';
 
 class AddDataScreen extends StatefulWidget {
@@ -513,32 +512,6 @@ class _AddDataScreenState extends State<AddDataScreen> {
     }
   }
 
-  // Meldung bei fehlgeschlagener Prüfung
-  void _showMessage(String text) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        content: Text(
-          text,
-          style: const TextStyle(fontSize: 15, color: AppColors.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(
-                color: AppColors.darkBlue,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Meldung bei fehlgeschlagener Prüfung. Änderung: der Dialog selbst steht jetzt als showAppMessage() in app_widgets.dart, weil er im Login/Registrieren-Bereich identisch gebraucht wird 
+  void _showMessage(String text) => showAppMessage(context, text);
 }

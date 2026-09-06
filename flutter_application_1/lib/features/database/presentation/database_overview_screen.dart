@@ -1,6 +1,5 @@
 // Übersichtsseite des Datenbank-Bereichs. Aufbau analog zu den Detailseiten: Header, Textbox und Info-Boxen.
 
-
 import 'package:flutter/material.dart';
 import '../data/database_repository.dart';
 import '../domain/database_category.dart';
@@ -48,11 +47,12 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
 
             const SizedBox(height: 20),
 
-            // Kleine Textbox mit Platzhaltertext 
+            // Kurzer Hinweistext
             const TextCard(
               text:
-                  'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam '
-                  'nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat.',
+                  'Hier ist deine persönliche Musik-Datenbank. Tippe auf eine '
+                  'Kategorie, um ihre Einträge zu sehen, oder erfasse über das '
+                  'Plus unten rechts einen neuen Eintrag.',
             ),
 
             const SizedBox(height: 24),

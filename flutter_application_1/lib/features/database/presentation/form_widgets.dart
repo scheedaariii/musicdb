@@ -106,6 +106,62 @@ class FormTextField extends StatelessWidget {
   }
 }
 
+// Passwortfeld mit Auge-Icon zum Ein-/Ausblenden. Wird im Login- und
+// Registrieren-Screen sowie beim Zurücksetzen des Passworts im Profil
+// gebraucht - baut auf demselben Kartenaussehen wie FormTextField auf,
+// braucht aber einen eigenen State für das Ein-/Ausblenden.
+class PasswordField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+
+  const PasswordField({
+    super.key,
+    required this.controller,
+    this.label = 'Passwort',
+  });
+
+  @override
+  State<PasswordField> createState() => _PasswordFieldState();
+}
+
+class _PasswordFieldState extends State<PasswordField> {
+  bool _hidden = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        FieldLabel(label: widget.label),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: appCardDecoration(),
+          child: TextField(
+            controller: widget.controller,
+            obscureText: _hidden,
+            style: _wertStil,
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _hidden
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+                onPressed: () => setState(() => _hidden = !_hidden),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 // Auswahlfeld mit einer einzelnen Auswahl
 class FormDropdown extends StatelessWidget {
   final String label;
@@ -524,13 +580,20 @@ class FormDateField extends StatelessWidget {
   }
 }
 
-// Der Speichern-Button am Ende des Formulars
+// Der grosse, dunkelblaue Haupt-Button für speichern wird nun universal genutzt für div. Funktionen
 class SaveButton extends StatelessWidget {
   // Änderung (Feedback "keine WriteSperren"): SaveButton.onPressed auf VoidCallback? umgestellt, damit er während _saving deaktiviert werden kann.
-  
-  final VoidCallback? onPressed;
 
-  const SaveButton({super.key, required this.onPressed});
+  final VoidCallback? onPressed;
+  final String label;
+  final IconData icon;
+
+  const SaveButton({
+    super.key,
+    required this.onPressed,
+    this.label = 'Speichern',
+    this.icon = Icons.save_outlined,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -538,10 +601,10 @@ class SaveButton extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: onPressed,
-        icon: const Icon(Icons.save_outlined, size: 20),
-        label: const Text(
-          'Speichern',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+        icon: Icon(icon, size: 20),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.darkBlue,

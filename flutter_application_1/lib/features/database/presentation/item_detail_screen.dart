@@ -1,20 +1,10 @@
 // item_detail_screen.dart
-// Zeigt die Detailinformationen eines einzelnen Eintrags an und erlaubt es,
-// ihn zu bearbeiten. Funktioniert für alle Kategorien gleich: Band, Musiker,
-// Album, Song, Genre und Rolle liefern über die Schnittstelle DatabaseItem
-// ihre eigenen Felder, dieser Screen stellt sie einheitlich dar.
+// Zeigt die Detailinformationen eines einzelnen Eintrags an und erlaubt es, ihn zu bearbeiten. Funktioniert für alle Kategorien gleich.
 //
-// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus, auch
-// der Name/Titel ist editierbar. Verknüpfungen sind überall nur über IDs
-// gespeichert (siehe die Modelle in domain/), nirgends liegt eine Kopie
-// eines Namens - eine Umbenennung ändert daher immer nur das eine
-// betroffene Dokument, ohne dass an anderer Stelle etwas nachgezogen
-// werden müsste. Sobald etwas geändert wurde, erscheint der Speichern-
-// Button.
+// Der Stift-Button oben schaltet die Seite in den Bearbeitungsmodus, auch der Name/Titel ist editierbar. Verknüpfungen sind überall nur über IDs
+// gespeichert. Dadurch sind Änderungen überall sichtbar.
 //
-// Verknüpfungen, die auf der Detailseite nur als Liste erscheinen (z.B.
-// die Songs einer Band), werden nicht bei der Band selbst gespeichert,
-// sondern beim jeweils anderen Eintrag (Song.bandIds). Deshalb schreibt
+// Verknüpfungen, die auf der Detailseite nur als Liste erscheinen (z.B. die Songs einer Band), werden nicht bei der Band selbst gespeichert, sondern beim jeweils anderen Eintrag (Song.bandIds). Deshalb schreibt
 // das Speichern in diesen Fällen auch den anderen Eintrag zurück.
 
 import 'package:flutter/material.dart';
@@ -32,6 +22,7 @@ import 'database_widgets.dart';
 import 'form_widgets.dart';
 import '../../../app/app_bottom_nav.dart';
 import '../../../app/app_colors.dart';
+import '../../../app/app_widgets.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   // Der ausgewählte Eintrag wird beim Öffnen des Screens übergeben
@@ -350,33 +341,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     return true;
   }
 
-  void _showMessage(String text) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        content: Text(
-          text,
-          style: const TextStyle(fontSize: 15, color: AppColors.text),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'OK',
-              style: TextStyle(
-                color: AppColors.darkBlue,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Änderung: der Dialog selbst steht jetzt als showAppMessage() in app_widgets.dart (auch im Login/Registrieren-Bereich gebraucht).
+  void _showMessage(String text) => showAppMessage(context, text);
 
   // Änderung (Feedback "kein Rollback bei Schreibfehlern" + "keine WriteSperren"): _save ist jetzt async und wartet jede repo.updateX()/repo.addXToY()-Aufruf ab.
   // Während des gesamten Vorgangs sperrt _saving den Speichern-Button.
@@ -996,7 +962,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       ),
 
       // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird.
-      //
       // Änderung (Feedback "keine WriteSperren"): onPressed ist während _saving jeweils null, damit während eines laufenden Speicher-/Löschvorgangs kein zweiter Klick einen weiteren Schreibvorgang auslösen kann.
 
       floatingActionButton: _editing

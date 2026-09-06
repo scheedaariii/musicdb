@@ -1,10 +1,17 @@
 // MaterialApp mit den Designgrundlagen und der Startseite.
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'navigation_screen.dart';
 import 'app_colors.dart';
 import 'app_messenger.dart';
+import '../features/auth/data/auth_repository.dart';
+import '../features/auth/presentation/login_screen.dart';
 import '../features/database/data/database_repository.dart';
+import '../features/onboarding/data/onboarding_repository.dart';
+import '../features/onboarding/presentation/welcome_screen.dart';
 
 // Änderung (Feedback "UI-Fehlermeldungen aus Repository"): Das Repository zeigt Fehler nicht mehr selbst als SnackBar an, sondern legt den Fehlertext nur in repo.lastError ab.
 // die UI-Anzeige passiert also nur noch hier, nicht mehr in der Datenschicht.
@@ -17,15 +24,45 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  // Änderung (Datenzugehörigkeit): hört zusätzlich auf den Login-Status,
+  // um repo.reset() aufzurufen, sobald sich niemand mehr angemeldet hat -
+  // sonst würde bei einem zweiten Konto auf demselben Gerät zuerst kurz
+  // noch die Datenbank des vorherigen Kontos aufscheinen.
+  StreamSubscription<User?>? _authSub;
+
+  // Änderung (Onboarding, Teil 6): null = wird noch geprüft, true = der
+  // Welcome-Screen wurde auf diesem Gerät noch nie gesehen und muss vor
+  // dem Login gezeigt werden, false = schon gesehen (siehe
+  // onboarding_repository.dart, das den Wert per shared_preferences
+  // dauerhaft auf dem Gerät speichert).
+  bool? _showWelcome;
+
   @override
   void initState() {
     super.initState();
     repo.lastError.addListener(_onError);
+    _authSub = authRepo.authStateChanges.listen((user) {
+      if (user == null) repo.reset();
+    });
+    _loadWelcomeFlag();
+  }
+
+  Future<void> _loadWelcomeFlag() async {
+    final bool seen = await onboardingRepo.hasSeenWelcome();
+    if (mounted) setState(() => _showWelcome = !seen);
+  }
+
+  // Wird vom "Los geht's"-Button auf dem Welcome-Screen aufgerufen: merkt
+  // dauerhaft, dass er gesehen wurde, und schaltet zum Login weiter.
+  void _continueFromWelcome() {
+    onboardingRepo.markWelcomeSeen();
+    setState(() => _showWelcome = false);
   }
 
   @override
   void dispose() {
     repo.lastError.removeListener(_onError);
+    _authSub?.cancel();
     super.dispose();
   }
 
@@ -95,9 +132,28 @@ class _AppState extends State<App> {
         ),
       ),
 
-      // Startseite wartet zuerst auf die Daten aus Firestore
-
-      home: const _StartupScreen(),
+      // Änderung (Onboarding): ganz zuvorderst steht die Prüfung, ob der
+      // Welcome-Screen auf diesem Gerät schon gesehen wurde. Erst danach
+      // kommt das Auth-Gate (Änderung Authentifizierung): Es hört auf den
+      // Login-Status von Firebase Auth und zeigt den Login-Screen, solange
+      // niemand eingeloggt ist - erst danach kommt wie bisher die
+      // Datenbank-Ladeseite.
+      home: _showWelcome == null
+          ? const _LoadingScreen()
+          : _showWelcome!
+              ? WelcomeScreen(onContinue: _continueFromWelcome)
+              : StreamBuilder<User?>(
+                  stream: authRepo.authStateChanges,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const _LoadingScreen();
+                    }
+                    if (snapshot.data == null) {
+                      return const LoginScreen();
+                    }
+                    return _StartupScreen(uid: snapshot.data!.uid);
+                  },
+                ),
     );
   }
 }
@@ -108,14 +164,18 @@ class _AppState extends State<App> {
 // Fehlermeldung bei laden Fehlern. Beides konnte nur mit AI getriebenen Tests nachgewiesen werden bisher.
 
 class _StartupScreen extends StatefulWidget {
-  const _StartupScreen();
+  // Änderung (Datenzugehörigkeit): load() muss wissen, wer eingeloggt ist,
+  // um die richtigen (privaten) Daten zu laden.
+  final String uid;
+
+  const _StartupScreen({required this.uid});
 
   @override
   State<_StartupScreen> createState() => _StartupScreenState();
 }
 
 class _StartupScreenState extends State<_StartupScreen> {
-  late final Future<void> _laden = DatabaseRepository.instance.load();
+  late final Future<void> _laden = DatabaseRepository.instance.load(widget.uid);
 
   @override
   Widget build(BuildContext context) {

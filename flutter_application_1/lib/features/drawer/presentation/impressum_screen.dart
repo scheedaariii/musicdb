@@ -23,8 +23,8 @@ class ImpressumScreen extends StatelessWidget {
               title: 'Angaben gemäss Informationspflicht',
               content:
                   'MusicDB App\n'
-                  'Musterstrasse 12\n'
-                  '8000 Zürich\n'
+                  'Seefeldstrasse 45\n'
+                  '8008 Zürich\n'
                   'Schweiz',
             ),
 
