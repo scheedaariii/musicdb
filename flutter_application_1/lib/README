@@ -35,4 +35,14 @@ Bug beheben: Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas ge
 
 Finale Abgabe
 
-Zu fixen: Die Zähler auf der Database-Übersichtsseite aktualisieren sich nicht automatisch beim Zurücknavigieren (nur nach App-Neustart korrekt) — das ist ein vorbestehendes UI-Verhalten (database_overview_screen.dart baut sich nicht bei Rückkehr neu auf) und keine Regression durch diese Änderungen. Falls gewünscht, kann ich das als separate Verbesserung angehen.
+Userprofil: Aktuell bewusst auf einen Bildupload verzichtet (z.b. mit der package image_picker), da kein Berühurngspunkt zwischen den Benutzern besteht welcher ein Bild Sinnvoll machen würde. Ein Automatisch generierter Platzhalter ist jedoch bereits vorhanden sollte später eine share Funktion dazukommen.
+Feedback zur Grösse database_repository konnte nicht wirklich berücksichtigt werden. Siehe Kommentar im betroffen File selbst.
+Die Statistiken im userprofil dienen als Beispiel für mögliche weitere Statisktiken. In der Zukunft könnt eman hier noch ein Favoriten Funktion einbauen.
+Ich sehe folgende Schritte als die nächsten logischen Erweiterungen:
+- Bild Upload für die Kategorien und User Profilseite
+- Mitglieder Historie für Bands
+- Sharen von Daten zwischen Benutzern
+    - Friendsliste
+    - Datashareing
+    - chat?
+    

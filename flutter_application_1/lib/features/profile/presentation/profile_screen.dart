@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../auth/data/auth_errors.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../database/data/database_repository.dart';
+import '../../database/domain/info_field.dart';
+import '../../database/presentation/database_widgets.dart';
 import '../../database/presentation/form_widgets.dart';
 import '../../../app/app_drawer.dart';
 import '../../../app/app_colors.dart';
@@ -203,12 +205,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, snapshot) {
         final String username = snapshot.data?.username ?? '';
         final String email = authRepo.currentUser?.email ?? '';
-        final String initialen = username.trim().isEmpty
-            ? '?'
-            : username
-                .trim()
-                .substring(0, username.trim().length >= 2 ? 2 : 1)
-                .toUpperCase();
+
+        // Änderung: die vier Statistik-Karten (Bands/Genres-Anzahl) waren
+        // doppelt mit der Database-Übersicht - stattdessen jetzt "Mitglied
+        // seit" (kommt direkt von Firebase, kein neues Feld nötig) und
+        // vier berechnete Kennzahlen aus den bestehenden Daten.
+        final DateTime? mitgliedSeit = authRepo.currentUser?.metadata.creationTime;
+        final List<InfoField> profilStatistiken = [
+          InfoField(
+            icon: Icons.calendar_today,
+            label: 'Mitglied seit',
+            value: mitgliedSeit != null ? _formatDate(mitgliedSeit) : '–',
+          ),
+          InfoField(
+            icon: Icons.category_outlined,
+            label: 'Genre mit den meisten Bands',
+            value: repo.genreWithMostBands != null
+                ? '${repo.genreWithMostBands!.title} (${repo.genreWithMostBandsCount})'
+                : 'Noch keine Daten',
+          ),
+          InfoField(
+            icon: Icons.queue_music,
+            label: 'Genre mit den meisten Songs',
+            value: repo.genreWithMostSongs != null
+                ? '${repo.genreWithMostSongs!.title} (${repo.genreWithMostSongsCount})'
+                : 'Noch keine Daten',
+          ),
+          InfoField(
+            icon: Icons.library_music,
+            label: 'Band mit den meisten Songs',
+            value: repo.bandWithMostSongs != null
+                ? '${repo.bandWithMostSongs!.title} (${repo.bandWithMostSongsCount})'
+                : 'Noch keine Daten',
+          ),
+          InfoField(
+            icon: Icons.album,
+            label: 'Band mit den meisten Alben',
+            value: repo.bandWithMostAlbums != null
+                ? '${repo.bandWithMostAlbums!.title} (${repo.bandWithMostAlbumsCount})'
+                : 'Noch keine Daten',
+          ),
+        ];
 
         return Scaffold(
           appBar: AppBar(
@@ -244,22 +281,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Avatar-Kreis mit den Initialen des Usernamens
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const BoxDecoration(
-                          color: AppColors.gold,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            initialen,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.white,
-                            ),
+                      // Profilbild: für alle Nutzer dasselbe Bild (das
+                      // Launcher-Icon der App) statt der bisherigen
+                      // Initialen - ein eigener Bild-Upload ist (noch)
+                      // nicht vorgesehen.
+                      // Etwas Padding statt BoxFit.cover, da das Icon sonst
+                      // an den Rändern vom runden Zuschnitt abgeschnitten
+                      // wird (das Icon füllt das Quadrat bis in die Ecken).
+                      ClipOval(
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          color: AppColors.darkBlue,
+                          padding: const EdgeInsets.all(14),
+                          child: Image.asset(
+                            'assets/icon/icon.png',
+                            fit: BoxFit.contain,
                           ),
                         ),
                       ),
@@ -291,27 +328,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 20),
 
                 // Statistiken
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Bands',
-                        value: '${repo.bands.length}',
-                        icon: Icons.library_music,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildStatCard(
-                        label: 'Genres',
-                        value: '${repo.genres.length}',
-                        icon: Icons.queue_music,
-                      ),
-                    ),
-                  ],
-                ),
+                for (final InfoField field in profilStatistiken) ...[
+                  InfoBox(field: field),
+                  const SizedBox(height: 12),
+                ],
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
 
                 if (_editing) ...[
                   FormTextField(
@@ -371,34 +393,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Statistik-Karte für die Profilstatistiken
-  Widget _buildStatCard({
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: appCardDecoration(radius: 12),
-      child: Column(
-        children: [
-          Icon(icon, color: AppColors.gold, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.darkBlue,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 13, color: AppColors.textLight),
-          ),
-        ],
-      ),
-    );
+  // Formatiert das Registrierungsdatum als "TT.MM.JJJJ".
+  String _formatDate(DateTime date) {
+    final String tag = date.day.toString().padLeft(2, '0');
+    final String monat = date.month.toString().padLeft(2, '0');
+    return '$tag.$monat.${date.year}';
   }
 }

@@ -95,9 +95,12 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # Aktuell keine Assets, die die App zur Laufzeit lädt (die Bilder unter
+  # icon.png wird zur Laufzeit fürs Profilbild verwendet (dasselbe Bild wie
+  # das Launcher-Icon, für alle Nutzer gleich). Die übrigen Bilder unter
   # assets/icon/ und assets/images/ sind nur Quellen für Launcher-Icon und
-  # Splash-Screen, siehe flutter_launcher_icons/flutter_native_splash oben).
+  # Splash-Screen, siehe flutter_launcher_icons/flutter_native_splash oben.
+  assets:
+    - assets/icon/icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

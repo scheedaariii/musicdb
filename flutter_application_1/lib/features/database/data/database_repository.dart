@@ -43,8 +43,7 @@ class DatabaseRepository {
   // Wer gerade eingeloggt ist - bestimmt, wessen Daten geladen/gespeichert werden.
   String? _uid;
 
-  // Änderung (Feedback "UI-Fehlermeldungen aus Repository"):
-  // Vorher hat dieses Repository bei einem Schreibfehler direkt eine SnackBar angezeigt (import von flutter/material.dart und app_messenger.dart). Jetzt wird der Fehlertext nur noch hier abgelegt.
+  // Änderung (Feedback "UI-Fehlermeldungen aus Repository"): Vorher hat dieses Repository bei einem Schreibfehler direkt eine SnackBar angezeigt (import von flutter/material.dart und app_messenger.dart). Jetzt wird der Fehlertext nur noch hier abgelegt.
 
   final ValueNotifier<String?> lastError = ValueNotifier<String?>(null);
 
@@ -162,6 +161,111 @@ class DatabaseRepository {
 
   List<DatabaseCategory> get categories =>
       CategoryKind.values.map(categoryOf).toList();
+
+  // ---------- Statistiken fürs Profil ----------
+  // Ein Song hat kein eigenes Genre-Feld, darum wird sein Genre über die verknüpften Bands/Alben ermittelt (genreWithMostSongs).
+
+  // Genre mit den meisten Bands
+  Genre? get genreWithMostBands {
+    Genre? bestes;
+    int besterWert = 0;
+    for (final Genre genre in genres) {
+      final int anzahl = bands.where((b) => b.genreIds.contains(genre.id)).length;
+      if (anzahl > besterWert) {
+        bestes = genre;
+        besterWert = anzahl;
+      }
+    }
+    return bestes;
+  }
+
+  // Zähler abfüllen für das Genre mit den meisten Bands.
+  int get genreWithMostBandsCount {
+    final Genre? genre = genreWithMostBands;
+    if (genre == null) return 0;
+    return bands.where((b) => b.genreIds.contains(genre.id)).length;
+  }
+
+   // Genre mit den meisten Songs
+  Genre? get genreWithMostSongs {
+    final Map<String, int> anzahlProGenre = {};
+    for (final Song song in songs) {
+      final Set<String> genreIds = {};
+      for (final String bandId in song.bandIds) {
+        genreIds.addAll(bandById(bandId)?.genreIds ?? const []);
+      }
+      for (final String albumId in song.albumIds) {
+        genreIds.addAll(albumById(albumId)?.genreIds ?? const []);
+      }
+      for (final String genreId in genreIds) {
+        anzahlProGenre[genreId] = (anzahlProGenre[genreId] ?? 0) + 1;
+      }
+    }
+    if (anzahlProGenre.isEmpty) return null;
+    final String besteId =
+        anzahlProGenre.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+    return genreById(besteId);
+  }
+
+   // Zähler abfüllen für das Genre mit den meisten Songs.
+  int get genreWithMostSongsCount {
+    final Genre? genre = genreWithMostSongs;
+    if (genre == null) return 0;
+    int anzahl = 0;
+    for (final Song song in songs) {
+      final Set<String> genreIds = {};
+      for (final String bandId in song.bandIds) {
+        genreIds.addAll(bandById(bandId)?.genreIds ?? const []);
+      }
+      for (final String albumId in song.albumIds) {
+        genreIds.addAll(albumById(albumId)?.genreIds ?? const []);
+      }
+      if (genreIds.contains(genre.id)) anzahl++;
+    }
+    return anzahl;
+  }
+
+  // Band mit den meisten Songs
+  Band? get bandWithMostSongs {
+    Band? beste;
+    int besterWert = 0;
+    for (final Band band in bands) {
+      final int anzahl = songs.where((s) => s.bandIds.contains(band.id)).length;
+      if (anzahl > besterWert) {
+        beste = band;
+        besterWert = anzahl;
+      }
+    }
+    return beste;
+  }
+
+  // Zähler abfüllen für die Band mit den meisten Songs.
+  int get bandWithMostSongsCount {
+    final Band? band = bandWithMostSongs;
+    if (band == null) return 0;
+    return songs.where((s) => s.bandIds.contains(band.id)).length;
+  }
+
+  // Band mit den meisten Alben
+  Band? get bandWithMostAlbums {
+    Band? beste;
+    int besterWert = 0;
+    for (final Band band in bands) {
+      final int anzahl = albums.where((a) => a.bandIds.contains(band.id)).length;
+      if (anzahl > besterWert) {
+        beste = band;
+        besterWert = anzahl;
+      }
+    }
+    return beste;
+  }
+
+  // Zähler abfüllen für die Band mit den meisten Alben.
+  int get bandWithMostAlbumsCount {
+    final Band? band = bandWithMostAlbums;
+    if (band == null) return 0;
+    return albums.where((a) => a.bandIds.contains(band.id)).length;
+  }
 
   // ---------- Verknüpfungen: Suche per ID ----------
 
