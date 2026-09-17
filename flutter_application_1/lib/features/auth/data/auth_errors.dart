@@ -1,7 +1,4 @@
-// auth_errors.dart
-// Übersetzt die Fehler-Codes von Firebase Auth in verständliche, deutsche
-// Meldungen. Ohne das würde z.B. "wrong-password" oder "email-already-in-use"
-// unübersetzt in einem Dialog auftauchen.
+// Übersetzt die Fehler-Codes von Firebase Auth in verständliche, deutsche Meldungen. 
 
 import 'package:firebase_auth/firebase_auth.dart';
 

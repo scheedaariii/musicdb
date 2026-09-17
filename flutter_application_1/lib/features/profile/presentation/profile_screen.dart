@@ -197,18 +197,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Der Username wird sofort aktualisiert sobald er geändert wurde, damit die 
-    // Bands-/Genres-Zähler unten beim Zurückkehren auf diesen Screen
-    // zuverlässig den aktuellen Stand zeigen statt eines veralteten.
+    // Der Username wird sofort aktualisiert sobald er geändert wurde.
     return StreamBuilder<AuthProfile?>(
       stream: authRepo.currentProfile,
       builder: (context, snapshot) {
         final String username = snapshot.data?.username ?? '';
         final String email = authRepo.currentUser?.email ?? '';
 
-        // Änderung: die vier Statistik-Karten (Bands/Genres-Anzahl) waren
-        // doppelt mit der Database-Übersicht - stattdessen jetzt "Mitglied
-        // seit" (kommt direkt von Firebase, kein neues Feld nötig) und
+        // Änderung: die vier Statistik-Karten (Bands/Genres-Anzahl) waren redundant mit der Database-Übersicht, stattdessen jetzt "Mitglied seit" (kommt direkt von Firebase) und
         // vier berechnete Kennzahlen aus den bestehenden Daten.
         final DateTime? mitgliedSeit = authRepo.currentUser?.metadata.creationTime;
         final List<InfoField> profilStatistiken = [
@@ -220,30 +216,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           InfoField(
             icon: Icons.category_outlined,
             label: 'Genre mit den meisten Bands',
-            value: repo.genreWithMostBands != null
-                ? '${repo.genreWithMostBands!.title} (${repo.genreWithMostBandsCount})'
-                : 'Noch keine Daten',
+            value: repo.genreWithMostBands?.title ?? 'Noch keine Daten',
           ),
           InfoField(
             icon: Icons.queue_music,
             label: 'Genre mit den meisten Songs',
-            value: repo.genreWithMostSongs != null
-                ? '${repo.genreWithMostSongs!.title} (${repo.genreWithMostSongsCount})'
-                : 'Noch keine Daten',
+            value: repo.genreWithMostSongs?.title ?? 'Noch keine Daten',
           ),
           InfoField(
             icon: Icons.library_music,
             label: 'Band mit den meisten Songs',
-            value: repo.bandWithMostSongs != null
-                ? '${repo.bandWithMostSongs!.title} (${repo.bandWithMostSongsCount})'
-                : 'Noch keine Daten',
+            value: repo.bandWithMostSongs?.title ?? 'Noch keine Daten',
           ),
           InfoField(
             icon: Icons.album,
             label: 'Band mit den meisten Alben',
-            value: repo.bandWithMostAlbums != null
-                ? '${repo.bandWithMostAlbums!.title} (${repo.bandWithMostAlbumsCount})'
-                : 'Noch keine Daten',
+            value: repo.bandWithMostAlbums?.title ?? 'Noch keine Daten',
           ),
         ];
 
@@ -281,23 +269,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Profilbild: für alle Nutzer dasselbe Bild (das
-                      // Launcher-Icon der App) statt der bisherigen
-                      // Initialen - ein eigener Bild-Upload ist (noch)
-                      // nicht vorgesehen.
-                      // Etwas Padding statt BoxFit.cover, da das Icon sonst
-                      // an den Rändern vom runden Zuschnitt abgeschnitten
-                      // wird (das Icon füllt das Quadrat bis in die Ecken).
+                      // Profilbild: für alle Nutzer dasselbe Bild (das Launcher-Icon der App) statt der bisherigen Initialen 
                       ClipOval(
-                        child: Container(
+                        child: Image.asset(
+                          'assets/icon/icon.png',
                           width: 80,
                           height: 80,
-                          color: AppColors.darkBlue,
-                          padding: const EdgeInsets.all(14),
-                          child: Image.asset(
-                            'assets/icon/icon.png',
-                            fit: BoxFit.contain,
-                          ),
+                          fit: BoxFit.cover,
                         ),
                       ),
 

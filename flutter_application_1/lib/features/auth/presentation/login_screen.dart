@@ -140,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     );
                   },
                   child: const Text(
-                    'Noch kein Konto? Registrieren',
+                    'Registrieren',
                     style: TextStyle(color: AppColors.darkBlue),
                   ),
                 ),
