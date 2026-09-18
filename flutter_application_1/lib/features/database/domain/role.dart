@@ -10,9 +10,9 @@ class Role implements DatabaseItem {
   final String id;
 
   @override
-  final String title;              // Name der Rolle, z.B. "Schlagzeug"
+  final String title; // Name der Rolle, z.B. "Schlagzeug"
 
-  final String descriptionText;    // Beschreibung, falls erfasst
+  final String descriptionText; // Beschreibung, falls erfasst
 
   const Role({
     required this.id,
@@ -22,16 +22,16 @@ class Role implements DatabaseItem {
 
   // Baut eine Rolle aus einem Firestore-Dokument auf
   factory Role.fromMap(String id, Map<String, dynamic> map) => Role(
-        id: id,
-        title: map['title'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-      );
+    id: id,
+    title: map['title'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+  );
 
   // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'descriptionText': descriptionText,
-      };
+    'title': title,
+    'descriptionText': descriptionText,
+  };
 
   // Die Musiker, die diese Rolle ausüben
   List<String> get musicianIds => repo.musicians
@@ -57,12 +57,8 @@ class Role implements DatabaseItem {
 
   @override
   List<InfoField> get infoFields => [
-        InfoField(
-          icon: Icons.person_outline,
-          label: 'Musiker',
-          value: trailing,
-        ),
-      ];
+    InfoField(icon: Icons.person_outline, label: 'Musiker', value: trailing),
+  ];
 
   @override
   bool matches(String query) => matchesQuery(query, [title, trailing]);

@@ -1,4 +1,4 @@
-// Der Profil-Bereich der App. 
+// Der Profil-Bereich der App.
 // Änderung (Authentifizierung): vorher ein reiner Platzhalter mit fest eingetragenem Fantasie-Namen, jetzt der echte eingeloggte Nutzer.
 // Edit Funktion analog zu den Kategorien.
 
@@ -206,7 +206,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // Änderung: die vier Statistik-Karten (Bands/Genres-Anzahl) waren redundant mit der Database-Übersicht, stattdessen jetzt "Mitglied seit" (kommt direkt von Firebase) und
         // vier berechnete Kennzahlen aus den bestehenden Daten.
-        final DateTime? mitgliedSeit = authRepo.currentUser?.metadata.creationTime;
+        final DateTime? mitgliedSeit =
+            authRepo.currentUser?.metadata.creationTime;
         final List<InfoField> profilStatistiken = [
           InfoField(
             icon: Icons.calendar_today,
@@ -269,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Profilbild: für alle Nutzer dasselbe Bild (das Launcher-Icon der App) statt der bisherigen Initialen 
+                      // Profilbild: für alle Nutzer dasselbe Bild (das Launcher-Icon der App) statt der bisherigen Initialen
                       ClipOval(
                         child: Image.asset(
                           'assets/icon/icon.png',
@@ -351,13 +352,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Gleiches Prinzip wie in item_detail_screen.dart: Speichern nur sichtbar, wenn wirklich etwas geändert wurde.
           floatingActionButton: _editing
               ? (_dirty
-                  ? FloatingActionButton.extended(
-                      onPressed: _saving ? null : () => _save(username),
-                      icon: const Icon(Icons.save_outlined),
-                      label: const Text('Speichern'),
-                      shape: const StadiumBorder(),
-                    )
-                  : null)
+                    ? FloatingActionButton.extended(
+                        onPressed: _saving ? null : () => _save(username),
+                        icon: const Icon(Icons.save_outlined),
+                        label: const Text('Speichern'),
+                        shape: const StadiumBorder(),
+                      )
+                    : null)
               : FloatingActionButton.extended(
                   onPressed: () => _startEditing(username),
                   icon: const Icon(Icons.edit_outlined),

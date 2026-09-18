@@ -77,11 +77,11 @@ enum CategoryKind {
     required this.entryLabel,
   });
 
-  final String title;        // Name der Kategorie 
-  final String subtitle;     // Kurzbeschreibung 
-  final IconData icon;       // Icon in Liste und Header
-  final String description;  // Beschreibungstext auf der Listenseite
-  final String entryLabel;   // Überschrift über der Eintragsliste
+  final String title; // Name der Kategorie
+  final String subtitle; // Kurzbeschreibung
+  final IconData icon; // Icon in Liste und Header
+  final String description; // Beschreibungstext auf der Listenseite
+  final String entryLabel; // Überschrift über der Eintragsliste
 
   // Sucht die Kategorie zu einem angezeigten Namen, z.B. für das Formular.
   static CategoryKind? byTitle(String title) {
@@ -93,8 +93,8 @@ enum CategoryKind {
 
   // Alle Kategorienamen, z.B. für das Auswahlfeld im Formular
   static List<String> get allTitles => [
-        for (final CategoryKind kind in values) kind.title,
-      ];
+    for (final CategoryKind kind in values) kind.title,
+  ];
 }
 
 // Eine Kategorie zusammen mit ihren aktuellen Einträgen.
@@ -102,10 +102,7 @@ class DatabaseCategory {
   final CategoryKind kind;
   final List<DatabaseItem> entries;
 
-  const DatabaseCategory({
-    required this.kind,
-    required this.entries,
-  });
+  const DatabaseCategory({required this.kind, required this.entries});
 
   String get title => kind.title;
   String get subtitle => kind.subtitle;

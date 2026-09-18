@@ -28,10 +28,7 @@ class ItemDetailScreen extends StatefulWidget {
   // Der ausgewählte Eintrag wird beim Öffnen des Screens übergeben
   final DatabaseItem item;
 
-  const ItemDetailScreen({
-    super.key,
-    required this.item,
-  });
+  const ItemDetailScreen({super.key, required this.item});
 
   @override
   State<ItemDetailScreen> createState() => _ItemDetailScreenState();
@@ -54,17 +51,17 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   // Eingabefelder für den Bearbeitungsmodus - Name/Titel: bei Band, Album, Song, Genre und Rolle
 
   final TextEditingController _titleField = TextEditingController();
-  // Vor- und Nachname: nur bei Musikern 
+  // Vor- und Nachname: nur bei Musikern
   final TextEditingController _firstName = TextEditingController();
   final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
   final TextEditingController _origin = TextEditingController();
   final TextEditingController _durationSeconds = TextEditingController();
   final TextEditingController _description = TextEditingController();
-  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht 
+  // Für das eine Datumsfeld, das eine Kategorie jeweils braucht
   String _dateValue = '';
 
-  // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert). 
+  // Eigene Mehrfachauswahlen (direkt beim Eintrag gespeichert).
 
   final List<String> _genreSelection = [];
   final List<String> _bandSelection = [];
@@ -135,15 +132,21 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _foundedYear.text = item.founded;
       _origin.text = item.origin;
       _genreSelection.addAll(item.genreNames);
-      _relatedMusicianSelection.addAll(repo.musicians
-          .where((m) => m.bandIds.contains(item.id))
-          .map((m) => m.title));
-      _relatedAlbumSelection.addAll(repo.albums
-          .where((a) => a.bandIds.contains(item.id))
-          .map((a) => a.title));
-      _relatedSongSelection.addAll(repo.songs
-          .where((s) => s.bandIds.contains(item.id))
-          .map((s) => s.title));
+      _relatedMusicianSelection.addAll(
+        repo.musicians
+            .where((m) => m.bandIds.contains(item.id))
+            .map((m) => m.title),
+      );
+      _relatedAlbumSelection.addAll(
+        repo.albums
+            .where((a) => a.bandIds.contains(item.id))
+            .map((a) => a.title),
+      );
+      _relatedSongSelection.addAll(
+        repo.songs
+            .where((s) => s.bandIds.contains(item.id))
+            .map((s) => s.title),
+      );
     } else if (item is Musician) {
       _firstName.text = item.firstName;
       _lastName.text = item.lastName;
@@ -155,26 +158,33 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       _dateValue = item.releaseDate;
       _bandSelection.addAll(item.bandNames);
       _genreSelection.addAll(item.genreNames);
-      _relatedSongSelection.addAll(repo.songs
-          .where((s) => s.albumIds.contains(item.id))
-          .map((s) => s.title));
+      _relatedSongSelection.addAll(
+        repo.songs
+            .where((s) => s.albumIds.contains(item.id))
+            .map((s) => s.title),
+      );
     } else if (item is Song) {
       _titleField.text = item.title;
       _dateValue = item.releaseDate;
-      _durationSeconds.text =
-          item.durationSeconds > 0 ? item.durationSeconds.toString() : '';
+      _durationSeconds.text = item.durationSeconds > 0
+          ? item.durationSeconds.toString()
+          : '';
       _albumSelection.addAll(item.albumNames);
       _bandSelection.addAll(item.bandNames);
     } else if (item is Genre) {
       _titleField.text = item.title;
-      _relatedBandSelection.addAll(repo.bands
-          .where((b) => b.genreIds.contains(item.id))
-          .map((b) => b.title));
+      _relatedBandSelection.addAll(
+        repo.bands
+            .where((b) => b.genreIds.contains(item.id))
+            .map((b) => b.title),
+      );
     } else if (item is Role) {
       _titleField.text = item.title;
-      _relatedMusicianSelection.addAll(repo.musicians
-          .where((m) => m.roleIds.contains(item.id))
-          .map((m) => m.title));
+      _relatedMusicianSelection.addAll(
+        repo.musicians
+            .where((m) => m.roleIds.contains(item.id))
+            .map((m) => m.title),
+      );
     }
 
     _populating = false;
@@ -205,9 +215,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: const Text(
           'Wollen Sie den Eintrag wirklich löschen? '
           'Das Element wird komplett gelöscht!',
@@ -297,46 +305,58 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 
   // Änderung nach feeback: _onSave bleibt synchron (die Prüfungen oben brauchen kein await), ruft aber _save() jetzt "fire-and-forget" auf - _save selbst kümmert sich über _saving um die
-  // Button-Sperre und wartet den kompletten Speichervorgang inkl. aller Verknüpfungen ab. Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben Kategorie vorkommt. 
+  // Button-Sperre und wartet den kompletten Speichervorgang inkl. aller Verknüpfungen ab. Prüft, ob der (neue) Name schon bei einem anderen Eintrag derselben Kategorie vorkommt.
 
   bool _isNameUnique() {
     final DatabaseItem item = _item;
 
     if (item is Band) {
       final String neuerTitel = _titleField.text.trim();
-      return !repo.bands.any((b) =>
-          b.id != item.id &&
-          b.title.toLowerCase() == neuerTitel.toLowerCase());
+      return !repo.bands.any(
+        (b) =>
+            b.id != item.id &&
+            b.title.toLowerCase() == neuerTitel.toLowerCase(),
+      );
     }
     if (item is Musician) {
       final String vorname = _firstName.text.trim();
       final String nachname = _lastName.text.trim();
-      return !repo.musicians.any((m) =>
-          m.id != item.id &&
-          m.firstName.toLowerCase() == vorname.toLowerCase() &&
-          m.lastName.toLowerCase() == nachname.toLowerCase());
+      return !repo.musicians.any(
+        (m) =>
+            m.id != item.id &&
+            m.firstName.toLowerCase() == vorname.toLowerCase() &&
+            m.lastName.toLowerCase() == nachname.toLowerCase(),
+      );
     }
     if (item is Album) {
       final String neuerTitel = _titleField.text.trim();
-      return !repo.albums.any((a) =>
-          a.id != item.id &&
-          a.title.toLowerCase() == neuerTitel.toLowerCase());
+      return !repo.albums.any(
+        (a) =>
+            a.id != item.id &&
+            a.title.toLowerCase() == neuerTitel.toLowerCase(),
+      );
     }
     if (item is Song) {
       final String neuerTitel = _titleField.text.trim();
-      return !repo.songs.any((s) =>
-          s.id != item.id &&
-          s.title.toLowerCase() == neuerTitel.toLowerCase());
+      return !repo.songs.any(
+        (s) =>
+            s.id != item.id &&
+            s.title.toLowerCase() == neuerTitel.toLowerCase(),
+      );
     }
     if (item is Genre) {
       final String neuerName = _titleField.text.trim();
-      return !repo.genres.any((g) =>
-          g.id != item.id && g.title.toLowerCase() == neuerName.toLowerCase());
+      return !repo.genres.any(
+        (g) =>
+            g.id != item.id && g.title.toLowerCase() == neuerName.toLowerCase(),
+      );
     }
     if (item is Role) {
       final String neuerName = _titleField.text.trim();
-      return !repo.roles.any((r) =>
-          r.id != item.id && r.title.toLowerCase() == neuerName.toLowerCase());
+      return !repo.roles.any(
+        (r) =>
+            r.id != item.id && r.title.toLowerCase() == neuerName.toLowerCase(),
+      );
     }
     return true;
   }
@@ -354,14 +374,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     final DatabaseItem item = _item;
 
     if (item is Band) {
-      await repo.updateBand(Band(
-        id: item.id,
-        title: _titleField.text.trim(),
-        genreIds: repo.idsForGenreNames(_genreSelection),
-        founded: _foundedYear.text.trim(),
-        origin: _origin.text.trim(),
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateBand(
+        Band(
+          id: item.id,
+          title: _titleField.text.trim(),
+          genreIds: repo.idsForGenreNames(_genreSelection),
+          founded: _foundedYear.text.trim(),
+          origin: _origin.text.trim(),
+          descriptionText: _description.text.trim(),
+        ),
+      );
 
       await _syncReverse(
         before: repo.musicians
@@ -391,9 +413,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         after: _relatedAlbumSelection,
         onAdd: (title) {
           final Album? album = repo.albumByTitle(title);
-          return album == null
-              ? null
-              : repo.addBandToAlbum(album.id, item.id);
+          return album == null ? null : repo.addBandToAlbum(album.id, item.id);
         },
         onRemove: (title) {
           final Album? album = repo.albumByTitle(title);
@@ -423,25 +443,29 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       _item = repo.bandById(item.id) ?? item;
     } else if (item is Musician) {
-      await repo.updateMusician(Musician(
-        id: item.id,
-        firstName: _firstName.text.trim(),
-        lastName: _lastName.text.trim(),
-        dateOfBirth: _dateValue,
-        bandIds: repo.idsForBandNames(_bandSelection),
-        roleIds: repo.idsForRoleNames(_roleSelection),
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateMusician(
+        Musician(
+          id: item.id,
+          firstName: _firstName.text.trim(),
+          lastName: _lastName.text.trim(),
+          dateOfBirth: _dateValue,
+          bandIds: repo.idsForBandNames(_bandSelection),
+          roleIds: repo.idsForRoleNames(_roleSelection),
+          descriptionText: _description.text.trim(),
+        ),
+      );
       _item = repo.musicianById(item.id) ?? item;
     } else if (item is Album) {
-      await repo.updateAlbum(Album(
-        id: item.id,
-        title: _titleField.text.trim(),
-        bandIds: repo.idsForBandNames(_bandSelection),
-        genreIds: repo.idsForGenreNames(_genreSelection),
-        releaseDate: _dateValue,
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateAlbum(
+        Album(
+          id: item.id,
+          title: _titleField.text.trim(),
+          bandIds: repo.idsForBandNames(_bandSelection),
+          genreIds: repo.idsForGenreNames(_genreSelection),
+          releaseDate: _dateValue,
+          descriptionText: _description.text.trim(),
+        ),
+      );
 
       await _syncReverse(
         before: repo.songs
@@ -463,22 +487,26 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       _item = repo.albumById(item.id) ?? item;
     } else if (item is Song) {
-      await repo.updateSong(Song(
-        id: item.id,
-        title: _titleField.text.trim(),
-        durationSeconds: int.tryParse(_durationSeconds.text.trim()) ?? 0,
-        albumIds: repo.idsForAlbumNames(_albumSelection),
-        bandIds: repo.idsForBandNames(_bandSelection),
-        releaseDate: _dateValue,
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateSong(
+        Song(
+          id: item.id,
+          title: _titleField.text.trim(),
+          durationSeconds: int.tryParse(_durationSeconds.text.trim()) ?? 0,
+          albumIds: repo.idsForAlbumNames(_albumSelection),
+          bandIds: repo.idsForBandNames(_bandSelection),
+          releaseDate: _dateValue,
+          descriptionText: _description.text.trim(),
+        ),
+      );
       _item = repo.songById(item.id) ?? item;
     } else if (item is Genre) {
-      await repo.updateGenre(Genre(
-        id: item.id,
-        title: _titleField.text.trim(),
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateGenre(
+        Genre(
+          id: item.id,
+          title: _titleField.text.trim(),
+          descriptionText: _description.text.trim(),
+        ),
+      );
 
       await _syncReverse(
         before: repo.bands
@@ -500,11 +528,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       _item = repo.genreById(item.id) ?? item;
     } else if (item is Role) {
-      await repo.updateRole(Role(
-        id: item.id,
-        title: _titleField.text.trim(),
-        descriptionText: _description.text.trim(),
-      ));
+      await repo.updateRole(
+        Role(
+          id: item.id,
+          title: _titleField.text.trim(),
+          descriptionText: _description.text.trim(),
+        ),
+      );
 
       await _syncReverse(
         before: repo.musicians
@@ -575,7 +605,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     if (gewaehlt == null) return;
 
     setState(() {
-      _dateValue = '${gewaehlt.year.toString().padLeft(4, '0')}-'
+      _dateValue =
+          '${gewaehlt.year.toString().padLeft(4, '0')}-'
           '${gewaehlt.month.toString().padLeft(2, '0')}-'
           '${gewaehlt.day.toString().padLeft(2, '0')}';
     });
@@ -614,7 +645,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
         const SizedBox(height: 16),
         FormFilterableMultiSelect(
           label: 'Musiker',
@@ -706,7 +740,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
       ];
     }
 
@@ -753,7 +790,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
         const SizedBox(height: 16),
         FormFilterableMultiSelect(
           label: 'Songs',
@@ -821,7 +861,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         ),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
       ];
     }
 
@@ -830,7 +873,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         FormTextField(label: 'Name', controller: _titleField, required: true),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
         const SizedBox(height: 16),
         FormFilterableMultiSelect(
           label: 'Bands',
@@ -853,7 +899,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         FormTextField(label: 'Name', controller: _titleField, required: true),
         const SizedBox(height: 16),
         FormTextField(
-            label: 'Beschreibung', controller: _description, maxLines: 4),
+          label: 'Beschreibung',
+          controller: _description,
+          maxLines: 4,
+        ),
         const SizedBox(height: 16),
         FormFilterableMultiSelect(
           label: 'Musiker',
@@ -877,8 +926,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final DatabaseItem item = _item;
-    final List<RelatedSection> sections =
-        _editing ? const [] : repo.relatedFor(item);
+    final List<RelatedSection> sections = _editing
+        ? const []
+        : repo.relatedFor(item);
 
     return Scaffold(
       // AppBar zeigt den Namen des Eintrags als Titel
@@ -947,10 +997,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const SizedBox(height: 12),
 
                 for (final DatabaseItem related in section.items) ...[
-                  ItemRow(
-                    item: related,
-                    onReturn: () => setState(() {}),
-                  ),
+                  ItemRow(item: related, onReturn: () => setState(() {})),
                   const SizedBox(height: 12),
                 ],
               ],
@@ -963,16 +1010,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
       // Im Bearbeitungsmodus nur der Speichern-Button, sobald sich etwas geändert hat. Ausserhalb davon Bearbeiten und Löschen nebeneinander. Hier gibt es noch einen Bug dass das Anklicken eines Felder bereits als Änderung gewertet wird.
       // Änderung (Feedback "keine WriteSperren"): onPressed ist während _saving jeweils null, damit während eines laufenden Speicher-/Löschvorgangs kein zweiter Klick einen weiteren Schreibvorgang auslösen kann.
-
       floatingActionButton: _editing
           ? (_dirty
-              ? FloatingActionButton.extended(
-                  onPressed: _saving ? null : _onSave,
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('Speichern'),
-                  shape: const StadiumBorder(),
-                )
-              : null)
+                ? FloatingActionButton.extended(
+                    onPressed: _saving ? null : _onSave,
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('Speichern'),
+                    shape: const StadiumBorder(),
+                  )
+                : null)
           : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

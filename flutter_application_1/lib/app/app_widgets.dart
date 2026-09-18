@@ -1,4 +1,4 @@
-// Bausteine, die in der ganzen App vorkommen 
+// Bausteine, die in der ganzen App vorkommen
 // Vorher war das Aussehen der weissen Karten in sieben Dateien einzeln ausgeschrieben.
 
 import 'package:flutter/material.dart';
@@ -10,11 +10,7 @@ BoxDecoration appCardDecoration({double radius = 10}) {
     color: AppColors.white,
     borderRadius: BorderRadius.circular(radius),
     boxShadow: const [
-      BoxShadow(
-        color: AppColors.shadow,
-        blurRadius: 4,
-        offset: Offset(0, 2),
-      ),
+      BoxShadow(color: AppColors.shadow, blurRadius: 4, offset: Offset(0, 2)),
     ],
   );
 }
@@ -29,9 +25,7 @@ void showAppMessage(BuildContext context, String text) {
     context: context,
     builder: (context) => AlertDialog(
       backgroundColor: AppColors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       content: Text(
         text,
         style: const TextStyle(fontSize: 15, color: AppColors.text),
@@ -81,11 +75,7 @@ class SectionCard extends StatelessWidget {
   final String title;
   final String content;
 
-  const SectionCard({
-    super.key,
-    required this.title,
-    required this.content,
-  });
+  const SectionCard({super.key, required this.title, required this.content});
 
   @override
   Widget build(BuildContext context) {

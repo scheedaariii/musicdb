@@ -31,7 +31,7 @@ class AppBottomNav extends StatelessWidget {
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.library_music),
-              label: 'Database',
+              label: 'Datenbank',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.info_outline),

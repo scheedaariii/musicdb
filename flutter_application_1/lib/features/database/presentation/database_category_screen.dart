@@ -14,10 +14,7 @@ class DatabaseCategoryScreen extends StatefulWidget {
   // Die ausgewählte Kategorie wird beim Öffnen des Screens übergeben
   final CategoryKind kind;
 
-  const DatabaseCategoryScreen({
-    super.key,
-    required this.kind,
-  });
+  const DatabaseCategoryScreen({super.key, required this.kind});
 
   @override
   State<DatabaseCategoryScreen> createState() => _DatabaseCategoryScreenState();
@@ -40,8 +37,9 @@ class _DatabaseCategoryScreenState extends State<DatabaseCategoryScreen> {
     final DatabaseCategory category = repo.categoryOf(widget.kind);
 
     // Nur die Einträge anzeigen, welche zum Suchbegriff passen
-    final List<DatabaseItem> gefiltert =
-        category.entries.where((entry) => entry.matches(_query)).toList();
+    final List<DatabaseItem> gefiltert = category.entries
+        .where((entry) => entry.matches(_query))
+        .toList();
 
     return Scaffold(
       // AppBar zeigt den Kategorienamen als Titel

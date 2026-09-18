@@ -1,4 +1,4 @@
-// Formular zum Erfassen neuer Einträge. Der Screen wird über den Plus-Button geöffnet. 
+// Formular zum Erfassen neuer Einträge. Der Screen wird über den Plus-Button geöffnet.
 
 import 'package:flutter/material.dart';
 
@@ -26,7 +26,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   bool _saving = false;
 
   // Eingabefelder
-  
+
   final TextEditingController _name = TextEditingController();
   final TextEditingController _lastName = TextEditingController();
   final TextEditingController _foundedYear = TextEditingController();
@@ -67,7 +67,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Data'),
+        title: const Text('Neuer Eintrag'),
         // Inkl. Zurückpfeil
       ),
 
@@ -79,7 +79,7 @@ class _AddDataScreenState extends State<AddDataScreen> {
             // Header wie auf den Datenseiten
             const DetailHeader(
               icon: Icons.add_circle_outline,
-              title: 'Add Data',
+              title: 'Neuer Eintrag',
               subtitle: 'Neuen Eintrag erfassen',
             ),
 
@@ -195,7 +195,10 @@ class _AddDataScreenState extends State<AddDataScreen> {
           FormTextField(label: 'Vorname', required: true, controller: _name),
           const SizedBox(height: 16),
           FormTextField(
-              label: 'Nachname', required: true, controller: _lastName),
+            label: 'Nachname',
+            required: true,
+            controller: _lastName,
+          ),
           const SizedBox(height: 16),
           FormDateField(
             label: 'Geburtsdatum',
@@ -340,7 +343,8 @@ class _AddDataScreenState extends State<AddDataScreen> {
 
     setState(() {
       // Format JJJJ-MM-TT
-      _dateValue = '${gewaehlt.year.toString().padLeft(4, '0')}-'
+      _dateValue =
+          '${gewaehlt.year.toString().padLeft(4, '0')}-'
           '${gewaehlt.month.toString().padLeft(2, '0')}-'
           '${gewaehlt.day.toString().padLeft(2, '0')}';
     });
@@ -391,50 +395,57 @@ class _AddDataScreenState extends State<AddDataScreen> {
     final String name = _name.text.trim();
 
     switch (_kind!) {
+      // BUG-01 aus Testmanagement:  Vorher wurde zusätzlich Gründungsjahr und Genre verglichen, wodurch zwei Bands mit gleichem Namen unentdeckt blieben. Jetzt wie beim Bearbeiten (item_detail_screen.dart) nur noch der Name.
       case CategoryKind.bands:
-        final List<String> genreIds = repo.idsForGenreNames(_genres);
-        return !repo.bands.any((b) =>
-            b.title.toLowerCase() == name.toLowerCase() &&
-            b.founded == _foundedYear.text.trim() &&
-            _sameSet(b.genreIds, genreIds));
+        return !repo.bands.any(
+          (b) => b.title.toLowerCase() == name.toLowerCase(),
+        );
 
       case CategoryKind.musiker:
         final String nachname = _lastName.text.trim();
         final List<String> bandIds = repo.idsForBandNames(_bands);
         final List<String> roleIds = repo.idsForRoleNames(_roles);
-        return !repo.musicians.any((m) =>
-            m.firstName.toLowerCase() == name.toLowerCase() &&
-            m.lastName.toLowerCase() == nachname.toLowerCase() &&
-            _sameSet(m.bandIds, bandIds) &&
-            _sameSet(m.roleIds, roleIds));
+        return !repo.musicians.any(
+          (m) =>
+              m.firstName.toLowerCase() == name.toLowerCase() &&
+              m.lastName.toLowerCase() == nachname.toLowerCase() &&
+              _sameSet(m.bandIds, bandIds) &&
+              _sameSet(m.roleIds, roleIds),
+        );
 
       case CategoryKind.alben:
         final List<String> bandIds = repo.idsForBandNames(_bands);
         final List<String> genreIds = repo.idsForGenreNames(_genres);
-        return !repo.albums.any((a) =>
-            a.title.toLowerCase() == name.toLowerCase() &&
-            a.releaseDate == _dateValue &&
-            _sameSet(a.bandIds, bandIds) &&
-            _sameSet(a.genreIds, genreIds));
+        return !repo.albums.any(
+          (a) =>
+              a.title.toLowerCase() == name.toLowerCase() &&
+              a.releaseDate == _dateValue &&
+              _sameSet(a.bandIds, bandIds) &&
+              _sameSet(a.genreIds, genreIds),
+        );
 
       case CategoryKind.songs:
         final List<String> albumIds = repo.idsForAlbumNames(_albums);
         final List<String> bandIds = repo.idsForBandNames(_bands);
-        return !repo.songs.any((s) =>
-            s.title.toLowerCase() == name.toLowerCase() &&
-            s.releaseDate == _dateValue &&
-            _sameSet(s.albumIds, albumIds) &&
-            _sameSet(s.bandIds, bandIds) &&
-            s.durationSeconds == _durationValue);
+        return !repo.songs.any(
+          (s) =>
+              s.title.toLowerCase() == name.toLowerCase() &&
+              s.releaseDate == _dateValue &&
+              _sameSet(s.albumIds, albumIds) &&
+              _sameSet(s.bandIds, bandIds) &&
+              s.durationSeconds == _durationValue,
+        );
 
       // Bei Genre und Rolle muss allein der Name eindeutig sein
       case CategoryKind.genres:
-        return !repo.genreNames
-            .any((g) => g.toLowerCase() == name.toLowerCase());
+        return !repo.genreNames.any(
+          (g) => g.toLowerCase() == name.toLowerCase(),
+        );
 
       case CategoryKind.rolle:
-        return !repo.roleNames
-            .any((r) => r.toLowerCase() == name.toLowerCase());
+        return !repo.roleNames.any(
+          (r) => r.toLowerCase() == name.toLowerCase(),
+        );
     }
   }
 
@@ -512,6 +523,6 @@ class _AddDataScreenState extends State<AddDataScreen> {
     }
   }
 
-  // Meldung bei fehlgeschlagener Prüfung. Änderung: der Dialog selbst steht jetzt als showAppMessage() in app_widgets.dart, weil er im Login/Registrieren-Bereich identisch gebraucht wird 
+  // Meldung bei fehlgeschlagener Prüfung. Änderung: der Dialog selbst steht jetzt als showAppMessage() in app_widgets.dart, weil er im Login/Registrieren-Bereich identisch gebraucht wird
   void _showMessage(String text) => showAppMessage(context, text);
 }

@@ -10,13 +10,13 @@ class Song implements DatabaseItem {
   final String id;
 
   @override
-  final String title;             // Name des Songs
+  final String title; // Name des Songs
 
-  final List<String> albumIds;    // Verknüpfung zu den Alben
-  final List<String> bandIds;     // Verknüpfung zu den Bands
-  final int durationSeconds;      // Spieldauer in Sekunden
-  final String releaseDate;       // Release-Datum, optional
-  final String descriptionText;   // Beschreibung, bei neuen Songs leer
+  final List<String> albumIds; // Verknüpfung zu den Alben
+  final List<String> bandIds; // Verknüpfung zu den Bands
+  final int durationSeconds; // Spieldauer in Sekunden
+  final String releaseDate; // Release-Datum, optional
+  final String descriptionText; // Beschreibung, bei neuen Songs leer
 
   const Song({
     required this.id,
@@ -30,25 +30,25 @@ class Song implements DatabaseItem {
 
   // Baut einen Song aus einem Firestore-Dokument auf
   factory Song.fromMap(String id, Map<String, dynamic> map) => Song(
-        id: id,
-        title: map['title'] as String? ?? '',
-        durationSeconds: map['durationSeconds'] as int? ?? 0,
-        albumIds: List<String>.from(map['albumIds'] as List? ?? const []),
-        bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
-        releaseDate: map['releaseDate'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-      );
+    id: id,
+    title: map['title'] as String? ?? '',
+    durationSeconds: map['durationSeconds'] as int? ?? 0,
+    albumIds: List<String>.from(map['albumIds'] as List? ?? const []),
+    bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
+    releaseDate: map['releaseDate'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+  );
 
   // Die Felder, die in Firestore gespeichert werden. Die id ist keine
   // eigene Spalte, sondern die Dokument-ID.
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'durationSeconds': durationSeconds,
-        'albumIds': albumIds,
-        'bandIds': bandIds,
-        'releaseDate': releaseDate,
-        'descriptionText': descriptionText,
-      };
+    'title': title,
+    'durationSeconds': durationSeconds,
+    'albumIds': albumIds,
+    'bandIds': bandIds,
+    'releaseDate': releaseDate,
+    'descriptionText': descriptionText,
+  };
 
   // Die Namen der Alben dieses Songs
   List<String> get albumNames => albumIds
@@ -106,16 +106,20 @@ class Song implements DatabaseItem {
         ),
       if (releaseDate.isNotEmpty)
         InfoField(
-            icon: Icons.calendar_today, label: 'Erschienen', value: releaseDate),
+          icon: Icons.calendar_today,
+          label: 'Erschienen',
+          value: releaseDate,
+        ),
       if (durationSeconds > 0)
         InfoField(
-            icon: Icons.timer_outlined, label: 'Spieldauer', value: duration),
+          icon: Icons.timer_outlined,
+          label: 'Spieldauer',
+          value: duration,
+        ),
     ];
   }
 
   @override
-  bool matches(String query) => matchesQuery(
-        query,
-        [title, ...albumNames, ...bandNames, duration],
-      );
+  bool matches(String query) =>
+      matchesQuery(query, [title, ...albumNames, ...bandNames, duration]);
 }

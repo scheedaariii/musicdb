@@ -1,4 +1,4 @@
-// Übersetzt die Fehler-Codes von Firebase Auth in verständliche, deutsche Meldungen. 
+// Übersetzt die Fehler-Codes von Firebase Auth in verständliche, deutsche Meldungen.
 
 import 'package:firebase_auth/firebase_auth.dart';
 

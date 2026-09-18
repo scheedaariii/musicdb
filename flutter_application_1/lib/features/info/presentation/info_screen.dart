@@ -1,4 +1,3 @@
-// info_screen.dart
 // Der Info-Bereich der App.
 // Enthält einen Drawer mit Links zu Impressum, Datenschutz und Nutzungsbedingungen.
 // Beispiel Texte per ai Generiert
@@ -15,9 +14,7 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Info'),
-      ),
+      appBar: AppBar(title: const Text('Info')),
 
       // Drawer mit den Links zu Impressum, Datenschutz und Nutzungsbedingungen
       drawer: const AppDrawer(),
@@ -70,10 +67,7 @@ class InfoScreen extends StatelessWidget {
                   // Version
                   const Text(
                     'Version 1.0.0',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.gold,
-                    ),
+                    style: TextStyle(fontSize: 14, color: AppColors.gold),
                   ),
                 ],
               ),
@@ -110,7 +104,6 @@ class InfoScreen extends StatelessWidget {
                   'Diese App wurde im Rahmen des Moduls Mobile Apps '
                   'an der TEKO Schweizerische Fachschule AG entwickelt.',
             ),
-
           ],
         ),
       ),

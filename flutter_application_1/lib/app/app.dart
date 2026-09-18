@@ -84,17 +84,14 @@ class _AppState extends State<App> {
       // Globales Theme mit der definierten Farbpalette:
       // Mit coolors.co erstelltes Farbschema:
       // https://coolors.co/363636-242f40-cca43b-e5e5e5-ffffff
-
       theme: ThemeData(
         // Hauptfarbe
         primaryColor: AppColors.darkBlue,
 
         // App Hintergrund
-
         scaffoldBackgroundColor: AppColors.background,
 
         // AppBar Design
-
         appBarTheme: const AppBarTheme(
           backgroundColor: AppColors.darkBlue,
           foregroundColor: AppColors.white,
@@ -113,11 +110,9 @@ class _AppState extends State<App> {
         ),
 
         // Farbe für Datenkarten (weisse boxen)
-
         cardColor: AppColors.white,
 
         // Der runde Plus-Button. Steht hier im Theme, damit ihn nicht jeder Screen einzeln einfärben muss.
-
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: AppColors.gold,
           foregroundColor: AppColors.darkBlue,
@@ -125,7 +120,6 @@ class _AppState extends State<App> {
         ),
 
         // Farbschema Allg.
-
         colorScheme: ColorScheme.fromSwatch().copyWith(
           primary: AppColors.darkBlue,
           secondary: AppColors.gold,
@@ -141,25 +135,24 @@ class _AppState extends State<App> {
       home: _showWelcome == null
           ? const _LoadingScreen()
           : _showWelcome!
-              ? WelcomeScreen(onContinue: _continueFromWelcome)
-              : StreamBuilder<User?>(
-                  stream: authRepo.authStateChanges,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const _LoadingScreen();
-                    }
-                    if (snapshot.data == null) {
-                      return const LoginScreen();
-                    }
-                    return _StartupScreen(uid: snapshot.data!.uid);
-                  },
-                ),
+          ? WelcomeScreen(onContinue: _continueFromWelcome)
+          : StreamBuilder<User?>(
+              stream: authRepo.authStateChanges,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const _LoadingScreen();
+                }
+                if (snapshot.data == null) {
+                  return const LoginScreen();
+                }
+                return _StartupScreen(uid: snapshot.data!.uid);
+              },
+            ),
     );
   }
 }
 
-
-// Read: Erstes Laden der Datenbank aus Firestore 
+// Read: Erstes Laden der Datenbank aus Firestore
 // Holt beim Start alle Sammlungen aus Firestore. _StartupScreen wartet darauf und zeigt einen ladescreen wen das länger dauert.
 // Fehlermeldung bei laden Fehlern. Beides konnte nur mit AI getriebenen Tests nachgewiesen werden bisher.
 

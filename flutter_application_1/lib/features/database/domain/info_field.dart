@@ -3,9 +3,9 @@
 import 'package:flutter/material.dart';
 
 class InfoField {
-  final IconData icon;   // Icon links in der Box
-  final String label;    // Bezeichnung 
-  final String value;    // Wert 
+  final IconData icon; // Icon links in der Box
+  final String label; // Bezeichnung
+  final String value; // Wert
 
   const InfoField({
     required this.icon,

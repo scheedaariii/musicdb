@@ -10,9 +10,7 @@ class ImpressumScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Impressum'),
-      ),
+      appBar: AppBar(title: const Text('Impressum')),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

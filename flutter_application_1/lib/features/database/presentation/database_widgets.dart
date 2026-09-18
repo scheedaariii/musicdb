@@ -38,11 +38,7 @@ class DetailHeader extends StatelessWidget {
               color: AppColors.gold.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: AppColors.gold,
-              size: 40,
-            ),
+            child: Icon(icon, color: AppColors.gold, size: 40),
           ),
 
           const SizedBox(height: 16),
@@ -63,10 +59,7 @@ class DetailHeader extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.gold,
-              ),
+              style: const TextStyle(fontSize: 14, color: AppColors.gold),
               textAlign: TextAlign.center,
             ),
           ],
@@ -90,11 +83,7 @@ class InfoBox extends StatelessWidget {
       child: Row(
         children: [
           // Icon
-          Icon(
-            field.icon,
-            color: AppColors.gold,
-            size: 22,
-          ),
+          Icon(field.icon, color: AppColors.gold, size: 22),
 
           const SizedBox(width: 12),
 
@@ -148,11 +137,7 @@ class SectionTitle extends StatelessWidget {
         const SizedBox(height: 8),
 
         // Trennlinie
-        Container(
-          height: 2,
-          width: 40,
-          color: AppColors.gold,
-        ),
+        Container(height: 2, width: 40, color: AppColors.gold),
       ],
     );
   }
@@ -189,11 +174,7 @@ class ItemRow extends StatelessWidget {
           child: Row(
             children: [
               // Icon des Eintrags
-              Icon(
-                item.icon,
-                color: AppColors.gold,
-                size: 22,
-              ),
+              Icon(item.icon, color: AppColors.gold, size: 22),
 
               const SizedBox(width: 12),
 
@@ -240,11 +221,7 @@ class ItemRow extends StatelessWidget {
               const SizedBox(width: 6),
 
               // Pfeil-Icon rechts
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.gold,
-                size: 20,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.gold, size: 20),
             ],
           ),
         ),
@@ -278,11 +255,7 @@ class SearchField extends StatelessWidget {
       child: Row(
         children: [
           // Lupen-Icon
-          const Icon(
-            Icons.search,
-            color: AppColors.gold,
-            size: 22,
-          ),
+          const Icon(Icons.search, color: AppColors.gold, size: 22),
 
           const SizedBox(width: 12),
 
@@ -291,10 +264,7 @@ class SearchField extends StatelessWidget {
             child: TextField(
               controller: controller,
               onChanged: onChanged,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.text,
-              ),
+              style: const TextStyle(fontSize: 14, color: AppColors.text),
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: const TextStyle(
@@ -337,10 +307,7 @@ class EmptyHint extends StatelessWidget {
       decoration: appCardDecoration(),
       child: const Text(
         'Keine Einträge gefunden.',
-        style: TextStyle(
-          fontSize: 14,
-          color: AppColors.textLight,
-        ),
+        style: TextStyle(fontSize: 14, color: AppColors.textLight),
       ),
     );
   }

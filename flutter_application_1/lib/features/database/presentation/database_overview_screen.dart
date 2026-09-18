@@ -20,14 +20,12 @@ class DatabaseOverviewScreen extends StatefulWidget {
 class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
   @override
   Widget build(BuildContext context) {
-    // Bei jedem Aufbau die aktuellen Kategorien holen, damit neu erfasste Einträge sofort mitgezählt werden in der Liste. 
+    // Bei jedem Aufbau die aktuellen Kategorien holen, damit neu erfasste Einträge sofort mitgezählt werden in der Liste.
     final List<DatabaseCategory> categories = repo.categories;
 
     return Scaffold(
       // AppBar mit dem Titel der Seite
-      appBar: AppBar(
-        title: const Text('MusicDB – Database'),
-      ),
+      appBar: AppBar(title: const Text('MusicDB – Datenbank')),
 
       // nav drawer laden
       drawer: const AppDrawer(),
@@ -41,7 +39,7 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
             // Header mit grossem Icon und Titel
             const DetailHeader(
               icon: Icons.storage,
-              title: 'Database',
+              title: 'Datenbank',
               subtitle: 'Übersicht aller Datenpunkte',
             ),
 
@@ -77,9 +75,7 @@ class _DatabaseOverviewScreenState extends State<DatabaseOverviewScreen> {
         onPressed: () async {
           await Navigator.push<bool>(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AddDataScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AddDataScreen()),
           );
           // Nach der Rückkehr neu aufbauen, damit neue Einträge erscheinen
           if (mounted) setState(() {});
@@ -120,11 +116,7 @@ class _CategoryRow extends StatelessWidget {
           child: Row(
             children: [
               // Icon der Kategorie
-              Icon(
-                category.icon,
-                color: AppColors.gold,
-                size: 22,
-              ),
+              Icon(category.icon, color: AppColors.gold, size: 22),
 
               const SizedBox(width: 12),
 
@@ -167,10 +159,7 @@ class _CategoryRow extends StatelessWidget {
               const SizedBox(width: 6),
 
               // Pfeil-Icon rechts
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.gold,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.gold),
             ],
           ),
         ),

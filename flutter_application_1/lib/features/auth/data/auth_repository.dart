@@ -1,6 +1,7 @@
 // Zuständig für Login, Registrieren, Abmelden und die Profilverwaltung
 // Firebase Auth kennt von sich aus nur E-Mail-Adressen (Eindeutigkeit wird dort automatisch geprüft). Einen Username kennt Firebase Auth nicht.
 // Nach bestpractise und Beispielen gebaut. Ecken und Kanten mit AI gerade gezogen.
+// es existiert aktuell keine Email Infrastruktur - Es werden also keine Mails für reset etc. verschickt! Code ist beispielhaft nach Firebase standard eingefügt.
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,10 +15,10 @@ class AuthProfile {
       AuthProfile(username: data['username'] as String? ?? '');
 
   Map<String, dynamic> toMap(String username) => {
-        'username': username,
-        // Kleingeschriebene Kopie nur für den Eindeutigkeits-Vergleich, damit "Max" und "max" als derselbe Username gelten.
-        'usernameLower': username.toLowerCase(),
-      };
+    'username': username,
+    // Kleingeschriebene Kopie nur für den Eindeutigkeits-Vergleich, damit "Max" und "max" als derselbe Username gelten.
+    'usernameLower': username.toLowerCase(),
+  };
 }
 
 class AuthRepository {
@@ -49,11 +50,11 @@ class AuthRepository {
     required String email,
     required String password,
   }) async {
-    final UserCredential credential =
-        await _auth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
-    );
+    final UserCredential credential = await _auth
+        .createUserWithEmailAndPassword(
+          email: email.trim(),
+          password: password,
+        );
     await _db
         .collection('users')
         .doc(credential.user!.uid)
@@ -69,18 +70,20 @@ class AuthRepository {
 
   Future<void> signOut() => _auth.signOut();
 
-  // PW Reset (keien mail infra dahinter aktuell)
+  // PW Reset (keine mail infra dahinter aktuell)
   Future<void> sendPasswordReset(String email) {
     return _auth.sendPasswordResetEmail(email: email.trim());
   }
 
-  // Life aktualiserung von änderungen im usernamen
+  // Live Aktualisierung von Änderungen im Usernamen
   Stream<AuthProfile?> get currentProfile {
     final User? user = currentUser;
     if (user == null) return Stream.value(null);
-    return _db.collection('users').doc(user.uid).snapshots().map(
-          (doc) => doc.exists ? AuthProfile.fromMap(doc.data()!) : null,
-        );
+    return _db
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .map((doc) => doc.exists ? AuthProfile.fromMap(doc.data()!) : null);
   }
 
   Future<void> updateUsername(String newUsername) {
@@ -88,8 +91,9 @@ class AuthRepository {
     return _db
         .collection('users')
         .doc(user.uid)
-        .update(AuthProfile(username: newUsername.trim())
-            .toMap(newUsername.trim()));
+        .update(
+          AuthProfile(username: newUsername.trim()).toMap(newUsername.trim()),
+        );
   }
 
   // Ändert die E-Mail-Adresse. Firebase verlangt aus Sicherheitsgründen eine Bestätigung über einen Link an die neue Adresse (AI Input)

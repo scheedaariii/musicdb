@@ -9,12 +9,12 @@ class Musician implements DatabaseItem {
   @override
   final String id;
 
-  final String firstName;        // Vorname
-  final String lastName;         // Nachname
-  final String dateOfBirth;      // Geburtsdatum, Format JJJJ-MM-TT
-  final String descriptionText;  // Beschreibung, bei neuen Musikern leer
-  final List<String> bandIds;    // Verknüpfung zu den Bands
-  final List<String> roleIds;    // Verknüpfung zu den Rollen
+  final String firstName; // Vorname
+  final String lastName; // Nachname
+  final String dateOfBirth; // Geburtsdatum, Format JJJJ-MM-TT
+  final String descriptionText; // Beschreibung, bei neuen Musikern leer
+  final List<String> bandIds; // Verknüpfung zu den Bands
+  final List<String> roleIds; // Verknüpfung zu den Rollen
 
   const Musician({
     required this.id,
@@ -28,36 +28,40 @@ class Musician implements DatabaseItem {
 
   // Baut einen Musiker aus einem Firestore-Dokument auf
   factory Musician.fromMap(String id, Map<String, dynamic> map) => Musician(
-        id: id,
-        firstName: map['firstName'] as String? ?? '',
-        lastName: map['lastName'] as String? ?? '',
-        dateOfBirth: map['dateOfBirth'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-        bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
-        roleIds: List<String>.from(map['roleIds'] as List? ?? const []),
-      );
+    id: id,
+    firstName: map['firstName'] as String? ?? '',
+    lastName: map['lastName'] as String? ?? '',
+    dateOfBirth: map['dateOfBirth'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+    bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
+    roleIds: List<String>.from(map['roleIds'] as List? ?? const []),
+  );
 
   // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
-        'firstName': firstName,
-        'lastName': lastName,
-        'dateOfBirth': dateOfBirth,
-        'descriptionText': descriptionText,
-        'bandIds': bandIds,
-        'roleIds': roleIds,
-      };
+    'firstName': firstName,
+    'lastName': lastName,
+    'dateOfBirth': dateOfBirth,
+    'descriptionText': descriptionText,
+    'bandIds': bandIds,
+    'roleIds': roleIds,
+  };
 
   // Vor- und Nachname zusammen
   @override
   String get title => '$firstName $lastName'.trim();
 
   // Die Namen der Bands, in denen der Musiker spielt
-  List<String> get bandNames =>
-      bandIds.map((id) => repo.bandById(id)?.title).whereType<String>().toList();
+  List<String> get bandNames => bandIds
+      .map((id) => repo.bandById(id)?.title)
+      .whereType<String>()
+      .toList();
 
   // Die Namen der Rollen, in denen der Musiker spielt
-  List<String> get roleNames =>
-      roleIds.map((id) => repo.roleById(id)?.title).whereType<String>().toList();
+  List<String> get roleNames => roleIds
+      .map((id) => repo.roleById(id)?.title)
+      .whereType<String>()
+      .toList();
 
   // Alle Rollen als Text, z.B. "Gesang, Gitarre"
   String get role => roleNames.join(', ');
@@ -78,7 +82,7 @@ class Musician implements DatabaseItem {
 
     final bool geburtstagDiesesJahrNochNicht =
         heute.month < geburtstag.month ||
-            (heute.month == geburtstag.month && heute.day < geburtstag.day);
+        (heute.month == geburtstag.month && heute.day < geburtstag.day);
     if (geburtstagDiesesJahrNochNicht) alter--;
 
     return alter;
@@ -102,19 +106,19 @@ class Musician implements DatabaseItem {
 
   @override
   List<InfoField> get infoFields => [
-        if (dateOfBirth.isNotEmpty)
-          InfoField(
-            icon: Icons.calendar_today,
-            label: 'Geburtsdatum',
-            value: dateOfBirth,
-          ),
-        if (roleIds.isNotEmpty)
-          InfoField(
-            icon: Icons.piano,
-            label: roleIds.length == 1 ? 'Rolle' : 'Rollen',
-            value: role,
-          ),
-      ];
+    if (dateOfBirth.isNotEmpty)
+      InfoField(
+        icon: Icons.calendar_today,
+        label: 'Geburtsdatum',
+        value: dateOfBirth,
+      ),
+    if (roleIds.isNotEmpty)
+      InfoField(
+        icon: Icons.piano,
+        label: roleIds.length == 1 ? 'Rolle' : 'Rollen',
+        value: role,
+      ),
+  ];
 
   @override
   bool matches(String query) =>

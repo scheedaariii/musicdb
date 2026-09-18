@@ -24,7 +24,6 @@ class NavigationScreen extends StatelessWidget {
       valueListenable: selectedTab,
       builder: (context, currentIndex, child) {
         return Scaffold(
-          
           body: _screens[currentIndex],
 
           bottomNavigationBar: const AppBottomNav(),

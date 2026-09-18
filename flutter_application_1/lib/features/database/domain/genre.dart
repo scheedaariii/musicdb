@@ -1,5 +1,4 @@
-
-// Das Datenmodell eines Genres. 
+// Das Datenmodell eines Genres.
 
 import 'package:flutter/material.dart';
 import '../data/database_repository.dart';
@@ -11,7 +10,7 @@ class Genre implements DatabaseItem {
   final String id;
 
   @override
-  final String title;           // Name des Genres
+  final String title; // Name des Genres
 
   final String descriptionText; // Beschreibung
 
@@ -23,16 +22,16 @@ class Genre implements DatabaseItem {
 
   // Baut ein Genre aus einem Firestore-Dokument auf
   factory Genre.fromMap(String id, Map<String, dynamic> map) => Genre(
-        id: id,
-        title: map['title'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-      );
+    id: id,
+    title: map['title'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+  );
 
   // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'descriptionText': descriptionText,
-      };
+    'title': title,
+    'descriptionText': descriptionText,
+  };
 
   // Die Bands, die dieses Genre spielen
   List<String> get bandIds => repo.bands
@@ -57,12 +56,8 @@ class Genre implements DatabaseItem {
 
   @override
   List<InfoField> get infoFields => [
-        InfoField(
-          icon: Icons.library_music,
-          label: 'Bands',
-          value: trailing,
-        ),
-      ];
+    InfoField(icon: Icons.library_music, label: 'Bands', value: trailing),
+  ];
 
   @override
   bool matches(String query) => matchesQuery(query, [title, trailing]);

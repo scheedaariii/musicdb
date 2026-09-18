@@ -1,4 +1,4 @@
-// Das Datenmodell eines Albums. 
+// Das Datenmodell eines Albums.
 
 import 'package:flutter/material.dart';
 import '../data/database_repository.dart';
@@ -10,12 +10,12 @@ class Album implements DatabaseItem {
   final String id;
 
   @override
-  final String title;            // Name des Albums
+  final String title; // Name des Albums
 
-  final List<String> bandIds;    // Verknüpfung zu den Bands
-  final List<String> genreIds;   // Verknüpfung zu den Genres
-  final String releaseDate;      // Release-Datum, mindestens das Jahr
-  final String descriptionText;  // Beschreibung, bei neuen Alben leer
+  final List<String> bandIds; // Verknüpfung zu den Bands
+  final List<String> genreIds; // Verknüpfung zu den Genres
+  final String releaseDate; // Release-Datum, mindestens das Jahr
+  final String descriptionText; // Beschreibung, bei neuen Alben leer
 
   const Album({
     required this.id,
@@ -28,22 +28,22 @@ class Album implements DatabaseItem {
 
   // Baut ein Album aus einem Firestore-Dokument auf
   factory Album.fromMap(String id, Map<String, dynamic> map) => Album(
-        id: id,
-        title: map['title'] as String? ?? '',
-        bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
-        genreIds: List<String>.from(map['genreIds'] as List? ?? const []),
-        releaseDate: map['releaseDate'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-      );
+    id: id,
+    title: map['title'] as String? ?? '',
+    bandIds: List<String>.from(map['bandIds'] as List? ?? const []),
+    genreIds: List<String>.from(map['genreIds'] as List? ?? const []),
+    releaseDate: map['releaseDate'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+  );
 
-  // Die Felder, die in Firestore gespeichert werden. 
+  // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'bandIds': bandIds,
-        'genreIds': genreIds,
-        'releaseDate': releaseDate,
-        'descriptionText': descriptionText,
-      };
+    'title': title,
+    'bandIds': bandIds,
+    'genreIds': genreIds,
+    'releaseDate': releaseDate,
+    'descriptionText': descriptionText,
+  };
 
   // Die Namen der Bands dieses Albums
   List<String> get bandNames => bandIds
@@ -86,7 +86,10 @@ class Album implements DatabaseItem {
         ),
       if (releaseDate.isNotEmpty)
         InfoField(
-            icon: Icons.calendar_today, label: 'Erschienen', value: releaseDate),
+          icon: Icons.calendar_today,
+          label: 'Erschienen',
+          value: releaseDate,
+        ),
       if (genres.isNotEmpty)
         InfoField(
           icon: Icons.category_outlined,
@@ -97,8 +100,6 @@ class Album implements DatabaseItem {
   }
 
   @override
-  bool matches(String query) => matchesQuery(
-        query,
-        [title, ...bandNames, ...genreNames, releaseDate],
-      );
+  bool matches(String query) =>
+      matchesQuery(query, [title, ...bandNames, ...genreNames, releaseDate]);
 }

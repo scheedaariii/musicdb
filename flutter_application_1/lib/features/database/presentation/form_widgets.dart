@@ -7,19 +7,17 @@ import '../../../app/app_widgets.dart';
 
 // Die beiden Textstile, die in allen Formularfeldern vorkommen
 const TextStyle _wertStil = TextStyle(fontSize: 14, color: AppColors.text);
-const TextStyle _hinweisStil =
-    TextStyle(fontSize: 14, color: AppColors.textMuted);
+const TextStyle _hinweisStil = TextStyle(
+  fontSize: 14,
+  color: AppColors.textMuted,
+);
 
 // Beschriftung eines Feldes, Pflichtfelder mit rotem Stern
 class FieldLabel extends StatelessWidget {
   final String label;
   final bool required;
 
-  const FieldLabel({
-    super.key,
-    required this.label,
-    this.required = false,
-  });
+  const FieldLabel({super.key, required this.label, this.required = false});
 
   @override
   Widget build(BuildContext context) {
@@ -83,8 +81,9 @@ class FormTextField extends StatelessWidget {
           decoration: appCardDecoration(),
           child: TextField(
             controller: controller,
-            keyboardType:
-                numbersOnly ? TextInputType.number : TextInputType.text,
+            keyboardType: numbersOnly
+                ? TextInputType.number
+                : TextInputType.text,
             inputFormatters: numbersOnly
                 ? [FilteringTextInputFormatter.digitsOnly]
                 : null,
@@ -199,10 +198,7 @@ class FormDropdown extends StatelessWidget {
               isExpanded: true,
               // Gesperrt, wenn das Formular aus einer Kategorie geöffnet wurde
               onChanged: enabled ? onChanged : null,
-              hint: Text(
-                hintText,
-                style: _hinweisStil,
-              ),
+              hint: Text(hintText, style: _hinweisStil),
               icon: Icon(
                 enabled ? Icons.arrow_drop_down : Icons.lock_outline,
                 color: enabled ? AppColors.gold : AppColors.textMuted,
@@ -213,10 +209,7 @@ class FormDropdown extends StatelessWidget {
                 for (final String option in options)
                   DropdownMenuItem(
                     value: option,
-                    child: Text(
-                      option,
-                      style: _wertStil,
-                    ),
+                    child: Text(option, style: _wertStil),
                   ),
               ],
             ),
@@ -249,8 +242,9 @@ class FormMultiSelect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Bereits gewählte Einträge nicht nochmals anbieten
-    final List<String> offen =
-        options.where((o) => !selected.contains(o)).toList();
+    final List<String> offen = options
+        .where((o) => !selected.contains(o))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,10 +275,7 @@ class FormMultiSelect extends StatelessWidget {
                 for (final String option in offen)
                   DropdownMenuItem(
                     value: option,
-                    child: Text(
-                      option,
-                      style: _wertStil,
-                    ),
+                    child: Text(option, style: _wertStil),
                   ),
               ],
             ),
@@ -341,8 +332,8 @@ class FormFilterableMultiSelect extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Bereits gewählte Einträge nicht weiter anzeigen.
-    final List<String> offen = options.where((o) => !selected.contains(o)).toList()
-      ..sort();
+    final List<String> offen =
+        options.where((o) => !selected.contains(o)).toList()..sort();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,8 +356,9 @@ class FormFilterableMultiSelect extends StatelessWidget {
                   Icons.add_circle_outline,
                   color: offen.isEmpty ? AppColors.textMuted : AppColors.gold,
                 ),
-                onPressed:
-                    offen.isEmpty ? null : () => _openPicker(context, offen),
+                onPressed: offen.isEmpty
+                    ? null
+                    : () => _openPicker(context, offen),
               ),
             ],
           ),
@@ -447,8 +439,8 @@ class _FilterSheetState extends State<_FilterSheet> {
     final List<String> gefiltert = suchbegriff.isEmpty
         ? _verbleibend
         : _verbleibend
-            .where((o) => o.toLowerCase().contains(suchbegriff))
-            .toList();
+              .where((o) => o.toLowerCase().contains(suchbegriff))
+              .toList();
 
     return Padding(
       padding: EdgeInsets.only(
@@ -499,8 +491,10 @@ class _FilterSheetState extends State<_FilterSheet> {
                         final String eintrag = gefiltert[index];
                         return ListTile(
                           title: Text(eintrag, style: _wertStil),
-                          trailing:
-                              const Icon(Icons.add, color: AppColors.gold),
+                          trailing: const Icon(
+                            Icons.add,
+                            color: AppColors.gold,
+                          ),
                           onTap: () {
                             widget.onSelected(eintrag);
                             setState(() => _verbleibend.remove(eintrag));
@@ -551,8 +545,11 @@ class FormDateField extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today,
-                      color: AppColors.gold, size: 20),
+                  const Icon(
+                    Icons.calendar_today,
+                    color: AppColors.gold,
+                    size: 20,
+                  ),
 
                   const SizedBox(width: 12),
 
@@ -567,8 +564,11 @@ class FormDateField extends StatelessWidget {
                   if (value.isNotEmpty)
                     InkWell(
                       onTap: onClear,
-                      child: const Icon(Icons.close,
-                          color: AppColors.textMuted, size: 18),
+                      child: const Icon(
+                        Icons.close,
+                        color: AppColors.textMuted,
+                        size: 18,
+                      ),
                     ),
                 ],
               ),

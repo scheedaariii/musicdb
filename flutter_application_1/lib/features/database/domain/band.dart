@@ -10,12 +10,12 @@ class Band implements DatabaseItem {
   final String id;
 
   @override
-  final String title;          // Name der Band
+  final String title; // Name der Band
 
-  final String descriptionText;  // Beschreibung, bei neuen Bands leer
-  final List<String> genreIds;   // Verknüpfung zu den Genres
-  final String origin;           // Herkunft
-  final String founded;          // Gründungsjahr
+  final String descriptionText; // Beschreibung, bei neuen Bands leer
+  final List<String> genreIds; // Verknüpfung zu den Genres
+  final String origin; // Herkunft
+  final String founded; // Gründungsjahr
 
   const Band({
     required this.id,
@@ -28,22 +28,22 @@ class Band implements DatabaseItem {
 
   // Baut eine Band aus einem Firestore-Dokument auf
   factory Band.fromMap(String id, Map<String, dynamic> map) => Band(
-        id: id,
-        title: map['title'] as String? ?? '',
-        descriptionText: map['descriptionText'] as String? ?? '',
-        genreIds: List<String>.from(map['genreIds'] as List? ?? const []),
-        origin: map['origin'] as String? ?? '',
-        founded: map['founded'] as String? ?? '',
-      );
+    id: id,
+    title: map['title'] as String? ?? '',
+    descriptionText: map['descriptionText'] as String? ?? '',
+    genreIds: List<String>.from(map['genreIds'] as List? ?? const []),
+    origin: map['origin'] as String? ?? '',
+    founded: map['founded'] as String? ?? '',
+  );
 
   // Die Felder, die in Firestore gespeichert werden.
   Map<String, dynamic> toMap() => {
-        'title': title,
-        'descriptionText': descriptionText,
-        'genreIds': genreIds,
-        'origin': origin,
-        'founded': founded,
-      };
+    'title': title,
+    'descriptionText': descriptionText,
+    'genreIds': genreIds,
+    'origin': origin,
+    'founded': founded,
+  };
 
   @override
   String get description => descriptionText;
@@ -75,14 +75,13 @@ class Band implements DatabaseItem {
 
   @override
   List<InfoField> get infoFields => [
-        if (genreIds.isNotEmpty)
-          InfoField(icon: Icons.album, label: 'Genre', value: genre),
-        if (origin.isNotEmpty)
-          InfoField(icon: Icons.place, label: 'Herkunft', value: origin),
-        if (founded.isNotEmpty)
-          InfoField(
-              icon: Icons.calendar_today, label: 'Gegründet', value: founded),
-      ];
+    if (genreIds.isNotEmpty)
+      InfoField(icon: Icons.album, label: 'Genre', value: genre),
+    if (origin.isNotEmpty)
+      InfoField(icon: Icons.place, label: 'Herkunft', value: origin),
+    if (founded.isNotEmpty)
+      InfoField(icon: Icons.calendar_today, label: 'Gegründet', value: founded),
+  ];
 
   @override
   bool matches(String query) =>

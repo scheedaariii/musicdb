@@ -45,10 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _submitting = true);
     try {
-      await authRepo.signIn(
-        email: _email.text,
-        password: _password.text,
-      );
+      await authRepo.signIn(email: _email.text, password: _password.text);
       // Kein Navigator.push nötig: app.dart hört selbst auf den Login-Status
       // und wechselt automatisch zur App, sobald der Login erfolgreich war.
     } on FirebaseAuthException catch (e) {
@@ -60,10 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _forgotPassword() async {
     if (_email.text.trim().isEmpty) {
-      showAppMessage(
-        context,
-        'Bitte zuerst die E-Mail-Adresse oben eingeben.',
-      );
+      showAppMessage(context, 'Bitte zuerst die E-Mail-Adresse oben eingeben.');
       return;
     }
     try {
